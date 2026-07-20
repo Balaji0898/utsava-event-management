@@ -1,8 +1,31 @@
-# Elite Event Management Platform
+# Utsava — Event Management Platform
 
-A modern, scalable **Event Management Website + Admin Dashboard** with a premium UI,
-fully dynamic data model (unlimited departments → categories → items, vendors, multi-tier
-pricing, bookings) and Framer Motion animations.
+*Where every moment becomes a festival.*
+
+A modern, scalable **Event Management Website + Admin Dashboard** with a premium gold UI,
+fully dynamic data model (unlimited departments → categories → items, vendors, function halls,
+multi-tier pricing, bookings), Three.js 3D, Framer Motion, and EN/Telugu i18n.
+
+## 🚀 Get live URLs (one-click deploy)
+
+GitHub hosts the **code**; to get **live URLs** deploy the backend+DB and the frontend
+(both free tiers). Deploy order: **backend first**, then frontend.
+
+**1. Backend + PostgreSQL → Render** (reads `render.yaml`):
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Balaji0898/utsava-event-management)
+
+**2. Frontend → Vercel** (set Root Directory to `frontend`, and `NEXT_PUBLIC_API_URL` to the Render API URL):
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Balaji0898/utsava-event-management&root-directory=frontend&env=NEXT_PUBLIC_API_URL&envDescription=Base%20URL%20of%20the%20deployed%20Utsava%20API%20(e.g.%20https://utsava-api.onrender.com))
+
+Then in Render set `CORS_ORIGIN` to your Vercel URL, and run `npm run seed` once (Render → Shell).
+You'll end up with:
+- **Website:** `https://<your-app>.vercel.app`
+- **Admin:** `https://<your-app>.vercel.app/admin` (login `admin@elite.events` / `Admin@123`)
+- **API / Swagger:** `https://<your-api>.onrender.com/api` · `/docs`
+
+Full walkthrough: **[DEPLOYMENT.md](./DEPLOYMENT.md)**.
 
 ## Tech Stack
 
