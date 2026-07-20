@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 import { Sidebar } from '@/features/admin/components/sidebar';
 import { ThemeToggle } from '@/shared/theme/theme-toggle';
 import { BackButton } from '@/shared/ui/back-button';
-import { auth } from '@/shared/lib/api';
+import { api, auth } from '@/shared/lib/api';
 
 // Small WebGL gold gem — client only.
 const Hero3D = dynamic(() => import('@/features/website/components/hero-3d'), {
@@ -23,9 +23,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const user = auth.currentUser();
     if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
       router.replace('/login');
-    } else {
-      setReady(true);
+      return;
     }
+    // Validate the session with the API. If the access token expired during
+    // inactivity, api() transparently refreshes it; only a dead refresh token
+    // (or a non-admin) sends us back to login.
+    let active = true;
+    api('/auth/me', { auth: true })
+      .then((me: any) => {
+        if (!active) return;
+        if (me && ['ADMIN', 'SUPER_ADMIN'].includes(me.role)) {
+          setReady(true);
+        } else {
+          router.replace('/login');
+        }
+      })
+      .catch(() => {
+        if (active) router.replace('/login');
+      });
+    return () => {
+      active = false;
+    };
   }, [router]);
 
   if (!ready) {
