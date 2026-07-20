@@ -1,0 +1,279 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import { Save, ArrowLeft } from 'lucide-react';
+import { api } from '@/shared/lib/api';
+import { ImageUploader } from '@/features/admin/components/image-uploader';
+import { GalleryUploader } from '@/features/admin/components/gallery-uploader';
+
+type Department = { id: string; name: string };
+
+export type VendorData = {
+  id?: string;
+  name: string;
+  departmentId: string;
+  description: string;
+  logo: string;
+  coverImage: string;
+  gallery: string[];
+  experience: number;
+  location: string;
+  availableCities: string[];
+  contactNumber: string;
+  whatsapp: string;
+  email: string;
+  website: string;
+  instagram: string;
+  facebook: string;
+  priceFrom: number;
+  priceTo: number;
+  discountPercent: number;
+  available: boolean;
+  featured: boolean;
+  trending: boolean;
+  verified: boolean;
+  status: 'ACTIVE' | 'INACTIVE';
+};
+
+const empty: VendorData = {
+  name: '',
+  departmentId: '',
+  description: '',
+  logo: '',
+  coverImage: '',
+  gallery: [],
+  experience: 0,
+  location: '',
+  availableCities: [],
+  contactNumber: '',
+  whatsapp: '',
+  email: '',
+  website: '',
+  instagram: '',
+  facebook: '',
+  priceFrom: 0,
+  priceTo: 0,
+  discountPercent: 0,
+  available: true,
+  featured: false,
+  trending: false,
+  verified: false,
+  status: 'ACTIVE',
+};
+
+const inputCls =
+  'w-full rounded-xl border bg-[rgb(var(--card))] px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500';
+
+export function VendorForm({ initial }: { initial?: Partial<VendorData> | null }) {
+  const router = useRouter();
+  const [form, setForm] = useState<VendorData>({ ...empty, ...initial });
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    api<Department[]>('/departments?all=true').then(setDepartments).catch(() => {});
+  }, []);
+
+  function set<K extends keyof VendorData>(key: K, val: VendorData[K]) {
+    setForm((f) => ({ ...f, [key]: val }));
+  }
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    setError('');
+    const payload = {
+      ...form,
+      experience: Number(form.experience) || 0,
+      priceFrom: Number(form.priceFrom) || 0,
+      priceTo: Number(form.priceTo) || 0,
+      discountPercent: Number(form.discountPercent) || 0,
+    };
+    delete (payload as any).id;
+    try {
+      if (initial?.id) {
+        await api(`/vendors/${initial.id}`, {
+          method: 'PATCH',
+          auth: true,
+          body: JSON.stringify(payload),
+        });
+      } else {
+        await api('/vendors', { method: 'POST', auth: true, body: JSON.stringify(payload) });
+      }
+      router.push('/admin/vendors');
+      router.refresh();
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form onSubmit={submit} className="space-y-6">
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => router.push('/admin/vendors')}
+          className="inline-flex items-center gap-2 text-sm text-[rgb(var(--foreground))]/60 hover:text-brand-500"
+        >
+          <ArrowLeft size={16} /> Back to vendors
+        </button>
+        <button disabled={saving} className="btn-primary">
+          <Save size={16} className="mr-2" /> {saving ? 'Saving…' : 'Save vendor'}
+        </button>
+      </div>
+
+      {error && <p className="card border-red-500/40 p-3 text-sm text-red-500">{error}</p>}
+
+      {/* Details */}
+      <Section title="Details">
+        <div className="grid gap-4 md:grid-cols-2">
+          <Field label="Vendor / work name *">
+            <input className={inputCls} value={form.name} onChange={(e) => set('name', e.target.value)} required />
+          </Field>
+          <Field label="Department / service *">
+            <select
+              className={inputCls}
+              value={form.departmentId}
+              onChange={(e) => set('departmentId', e.target.value)}
+              required
+            >
+              <option value="">Select…</option>
+              {departments.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Experience (years)">
+            <input
+              type="number"
+              className={inputCls}
+              value={form.experience}
+              onChange={(e) => set('experience', Number(e.target.value))}
+            />
+          </Field>
+          <Field label="Location">
+            <input className={inputCls} value={form.location} onChange={(e) => set('location', e.target.value)} />
+          </Field>
+          <Field label="Available cities (comma separated)" full>
+            <input
+              className={inputCls}
+              value={form.availableCities.join(', ')}
+              onChange={(e) =>
+                set(
+                  'availableCities',
+                  e.target.value.split(',').map((c) => c.trim()).filter(Boolean),
+                )
+              }
+            />
+          </Field>
+          <Field label="Description" full>
+            <textarea
+              rows={4}
+              className={inputCls}
+              value={form.description}
+              onChange={(e) => set('description', e.target.value)}
+            />
+          </Field>
+        </div>
+      </Section>
+
+      {/* Work / media */}
+      <Section title="Their Work & Media">
+        <div className="grid gap-6 md:grid-cols-2">
+          <Field label="Logo">
+            <ImageUploader folder="vendors" value={form.logo} onChange={(u) => set('logo', u)} />
+          </Field>
+          <Field label="Cover image">
+            <ImageUploader folder="vendors" value={form.coverImage} onChange={(u) => set('coverImage', u)} />
+          </Field>
+        </div>
+        <Field label="Gallery (portfolio of work)">
+          <GalleryUploader folder="vendors" value={form.gallery} onChange={(g) => set('gallery', g)} />
+        </Field>
+      </Section>
+
+      {/* Contact */}
+      <Section title="Contact Details">
+        <div className="grid gap-4 md:grid-cols-2">
+          <Field label="Contact number">
+            <input className={inputCls} value={form.contactNumber} onChange={(e) => set('contactNumber', e.target.value)} />
+          </Field>
+          <Field label="WhatsApp">
+            <input className={inputCls} value={form.whatsapp} onChange={(e) => set('whatsapp', e.target.value)} />
+          </Field>
+          <Field label="Email">
+            <input className={inputCls} value={form.email} onChange={(e) => set('email', e.target.value)} />
+          </Field>
+          <Field label="Website">
+            <input className={inputCls} value={form.website} onChange={(e) => set('website', e.target.value)} />
+          </Field>
+          <Field label="Instagram">
+            <input className={inputCls} value={form.instagram} onChange={(e) => set('instagram', e.target.value)} />
+          </Field>
+          <Field label="Facebook">
+            <input className={inputCls} value={form.facebook} onChange={(e) => set('facebook', e.target.value)} />
+          </Field>
+        </div>
+      </Section>
+
+      {/* Pricing & flags */}
+      <Section title="Pricing & Visibility">
+        <div className="grid gap-4 md:grid-cols-3">
+          <Field label="Price from (₹)">
+            <input type="number" className={inputCls} value={form.priceFrom} onChange={(e) => set('priceFrom', Number(e.target.value))} />
+          </Field>
+          <Field label="Price to (₹)">
+            <input type="number" className={inputCls} value={form.priceTo} onChange={(e) => set('priceTo', Number(e.target.value))} />
+          </Field>
+          <Field label="Discount (%)">
+            <input type="number" className={inputCls} value={form.discountPercent} onChange={(e) => set('discountPercent', Number(e.target.value))} />
+          </Field>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-4">
+          {(['available', 'featured', 'trending', 'verified'] as const).map((flag) => (
+            <label key={flag} className="flex items-center gap-2 text-sm capitalize">
+              <input type="checkbox" checked={form[flag]} onChange={(e) => set(flag, e.target.checked)} className="h-4 w-4 accent-brand-500" />
+              {flag}
+            </label>
+          ))}
+          <label className="flex items-center gap-2 text-sm">
+            Status:
+            <select className={`${inputCls} w-auto py-1`} value={form.status} onChange={(e) => set('status', e.target.value as any)}>
+              <option value="ACTIVE">Active</option>
+              <option value="INACTIVE">Inactive</option>
+            </select>
+          </label>
+        </div>
+      </Section>
+    </form>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="card p-6"
+    >
+      <h3 className="mb-4 font-display text-lg font-semibold">{title}</h3>
+      {children}
+    </motion.div>
+  );
+}
+
+function Field({ label, children, full }: { label: string; children: React.ReactNode; full?: boolean }) {
+  return (
+    <div className={full ? 'md:col-span-2' : ''}>
+      <label className="mb-1 block text-xs font-medium text-[rgb(var(--foreground))]/70">{label}</label>
+      {children}
+    </div>
+  );
+}

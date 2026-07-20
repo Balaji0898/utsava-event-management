@@ -1,0 +1,95 @@
+{
+  "nav": {
+    "home": "Home",
+    "vendors": "Our Work",
+    "packages": "Packages",
+    "services": "Services",
+    "contact": "Contact Us",
+    "book": "Book Event",
+    "bookNow": "Book Now"
+  },
+  "hero": {
+    "badge": "Trusted by 5,000+ celebrations",
+    "titleA": "Turning every moment",
+    "titleHighlight": "into a magical",
+    "titleB": "celebration",
+    "subtitle": "From intimate gatherings to grand weddings, we blend creativity, elegance and precision to make your dream event come to life.",
+    "ctaPrimary": "Book Now",
+    "ctaSecondary": "Explore our work",
+    "place": "Place",
+    "dateFrom": "Date From",
+    "dateTo": "Date To",
+    "event": "Event",
+    "searchPlaceholderPlace": "City",
+    "searchPlaceholderEvent": "Wedding, Birthday…"
+  },
+  "stats": {
+    "events": "Events Delivered",
+    "vendors": "Verified Vendors",
+    "cities": "Cities Covered",
+    "customers": "Happy Customers"
+  },
+  "services": {
+    "title": "What We Create",
+    "subtitle": "Every service is crafted and curated by our team — explore our work.",
+    "explore": "Explore our work and packages.",
+    "vendorsSuffix": "listings"
+  },
+  "featured": {
+    "title": "Featured Work",
+    "viewAll": "View all",
+    "from": "From"
+  },
+  "testimonials": {
+    "title": "Loved by our clients"
+  },
+  "faq": {
+    "title": "Frequently asked questions"
+  },
+  "contact": {
+    "title": "Let's plan your celebration",
+    "subtitle": "Reach out to our event manager and we'll craft something unforgettable.",
+    "manager": "Event Manager",
+    "call": "Call now",
+    "whatsapp": "WhatsApp",
+    "email": "Email us"
+  },
+  "cta": {
+    "title": "Ready to plan your event?",
+    "subtitle": "Tell us what you need and we'll bring your celebration to life.",
+    "button": "Book your event"
+  },
+  "vendorsPage": {
+    "title": "Our Work",
+    "count": "listings available.",
+    "none": "Nothing to show yet."
+  },
+  "packagesPage": {
+    "title": "Packages",
+    "subtitle": "Transparent, multi-tier pricing for every celebration.",
+    "bookNow": "Book now",
+    "none": "No packages yet."
+  },
+  "book": {
+    "title": "Book Your Event",
+    "name": "Full name",
+    "email": "Email",
+    "phone": "Phone",
+    "date": "Event date",
+    "location": "Location",
+    "guests": "Guest count",
+    "budget": "Budget",
+    "requirements": "Special requirements",
+    "submit": "Submit booking",
+    "submitting": "Submitting…",
+    "successTitle": "Booking received!",
+    "successBody": "Our team will reach out to you shortly to confirm the details."
+  },
+  "footer": {
+    "tagline": "Where every moment becomes a festival — premium event management for weddings, celebrations and corporate events.",
+    "explore": "Explore",
+    "company": "Company",
+    "contact": "Contact",
+    "rights": "All rights reserved."
+  }
+}
