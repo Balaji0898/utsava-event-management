@@ -83,6 +83,12 @@ cp .env.example .env
 docker compose up --build
 ```
 
+## Deployment
+See **[DEPLOYMENT.md](./DEPLOYMENT.md)** for step-by-step guides:
+- **Vercel** (frontend) + **Render** (backend + Postgres) — recommended, configs included (`render.yaml`, `frontend/vercel.json`)
+- **Railway** alternative (`backend/railway.json`)
+- Self-hosted via Docker Compose
+
 ## What's included
 - ✅ Complete Prisma data model (dynamic departments, categories, items, vendors, packages, pricing, bookings, reviews, users/roles, CMS blocks, testimonials, FAQs, media assets)
 - ✅ JWT auth with refresh tokens + role guards
