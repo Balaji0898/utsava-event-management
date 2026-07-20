@@ -1,0 +1,57 @@
+name: Deploy Frontend (Vercel)
+
+# Auto-deploys the Next.js frontend to Vercel when frontend code changes on main.
+# Requires repo secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
+#   VERCEL_TOKEN  → vercel.com/account/tokens
+#   ORG/PROJECT   → run `vercel link` in /frontend once, then read .vercel/project.json
+#                   (or Vercel → Project → Settings → General).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy-frontend.yml'
+  workflow_dispatch:
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Vercel secrets are configured
+        id: guard
+        run: echo "ok=${{ secrets.VERCEL_TOKEN != '' && secrets.VERCEL_PROJECT_ID != '' }}" >> "$GITHUB_OUTPUT"
+
+      - name: Skip (Vercel secrets not set)
+        if: steps.guard.outputs.ok != 'true'
+        run: echo "::warning::VERCEL_TOKEN / VERCEL_PROJECT_ID not set — skipping frontend deploy."
+
+      - name: Checkout
+        if: steps.guard.outputs.ok == 'true'
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        if: steps.guard.outputs.ok == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Vercel CLI
+        if: steps.guard.outputs.ok == 'true'
+        run: npm install -g vercel@latest
+
+      - name: Pull Vercel project settings
+        if: steps.guard.outputs.ok == 'true'
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build
+        if: steps.guard.outputs.ok == 'true'
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy to production
+        if: steps.guard.outputs.ok == 'true'
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}

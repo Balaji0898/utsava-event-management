@@ -1,0 +1,33 @@
+name: Deploy Backend (Render)
+
+# Auto-deploys the NestJS API to Render when backend code changes on main.
+# Requires repo secret: RENDER_DEPLOY_HOOK_URL
+#   Render → your API service → Settings → Deploy Hook → copy the URL.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - 'render.yaml'
+      - '.github/workflows/deploy-backend.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check deploy hook is configured
+        id: guard
+        run: echo "ok=${{ secrets.RENDER_DEPLOY_HOOK_URL != '' }}" >> "$GITHUB_OUTPUT"
+
+      - name: Skip (no RENDER_DEPLOY_HOOK_URL secret)
+        if: steps.guard.outputs.ok != 'true'
+        run: echo "::warning::RENDER_DEPLOY_HOOK_URL secret not set — skipping backend deploy."
+
+      - name: Trigger Render deploy
+        if: steps.guard.outputs.ok == 'true'
+        run: |
+          echo "Triggering Render deploy…"
+          curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+          echo "Deploy triggered."

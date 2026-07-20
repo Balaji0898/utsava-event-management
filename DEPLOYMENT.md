@@ -119,5 +119,32 @@ Then put a reverse proxy (Caddy/Nginx) in front for TLS. Frontend → :3000, API
 - [ ] (Production) set `CLOUDINARY_*` so uploaded images persist
 - [ ] (Optional) add a custom domain in Vercel and update `CORS_ORIGIN`
 
+## CI/CD — auto-deploy on push (GitHub Actions)
+
+The repo includes two workflows in `.github/workflows/`:
+- `deploy-backend.yml` — pings a Render **Deploy Hook** when `backend/**` changes
+- `deploy-frontend.yml` — builds & deploys to **Vercel** when `frontend/**` changes
+
+They **skip safely** until you add the secrets below (no failed runs). Do the manual
+deploy once (Options 1/2) so the Render service and Vercel project exist, then wire up:
+
+### Add these in GitHub → repo → Settings → Secrets and variables → Actions → *New repository secret*
+
+| Secret | Where to get it |
+|--------|-----------------|
+| `RENDER_DEPLOY_HOOK_URL` | Render → your `utsava-api` service → **Settings → Deploy Hook** → copy URL |
+| `VERCEL_TOKEN` | [vercel.com/account/tokens](https://vercel.com/account/tokens) → create token |
+| `VERCEL_ORG_ID` | run `vercel link` inside `frontend/` once → read `frontend/.vercel/project.json` (`orgId`) |
+| `VERCEL_PROJECT_ID` | same `project.json` (`projectId`), or Vercel → Project → Settings → General |
+
+Once set, every push to `main` that touches `backend/**` redeploys the API, and any push
+touching `frontend/**` redeploys the site. You can also trigger them manually from the
+**Actions** tab (**Run workflow**).
+
+> Simpler alternative for the backend: in Render, enable **Auto-Deploy = Yes** on the service
+> (it redeploys on every push natively) and you can skip `RENDER_DEPLOY_HOOK_URL`. Vercel also
+> auto-deploys if you connect the Git repo directly — the Actions workflow is for teams that
+> want deploys controlled from CI instead.
+
 ## Free-tier note
 Render/Railway free web services **sleep when idle** and cold-start in ~30–60s on the first request. For an always-on demo, use a paid instance or ping the health URL periodically.
