@@ -151,70 +151,91 @@ export async function api<T = any>(
 
 // Server-side helper (no auth token; used by RSC for public data).
 //
-// Public GET data is served from Next's Data Cache instead of hitting the
-// backend on every request/navigation. Each response is stored under one or
-// more cache *tags*; a request only reaches the API when the cache is empty,
-// its tag was invalidated (see /api/revalidate), or the time-based fallback
-// window elapses. A bounded timeout + one retry keeps a cold/slow backend
-// from hanging server rendering (which left pages blank or silently empty).
+// Public GET data is cached with `unstable_cache` (Next's Data Cache), keyed by
+// path and stored under cache *tags*. This is independent of a page's render
+// mode, so pages can render dynamically at request time (always showing live
+// data, never an empty page baked at build) while still being served from cache
+// on repeat requests/navigations — the backend is only hit when the cache is
+// empty, its tag is invalidated (see /api/revalidate), or the time fallback
+// elapses.
+//
+// IMPORTANT: the fetch THROWS on failure so a cold/slow-backend miss is never
+// cached — the caller gets null (renders gracefully empty) and the very next
+// request retries and warms the cache once the backend is up.
+import { unstable_cache } from 'next/cache';
+
 type ServerApiOptions = {
   /**
-   * Time-based fallback for the Data Cache, in seconds. The cached value is
-   * reused for this long before a background refresh; use `revalidateTag`
-   * (via /api/revalidate) to refresh sooner when the data actually changes.
+   * Time-based fallback for the cache, in seconds. The cached value is reused
+   * for this long before a background refresh; use `revalidateTag` (via
+   * /api/revalidate) to refresh sooner when the data actually changes.
    * Default: 300s (5 min).
    */
   revalidate?: number;
   /** Cache tags this response is stored under, for on-demand invalidation. */
   tags?: string[];
-  /** Per-attempt timeout in ms before aborting. Default 8000ms. */
+  /** Per-attempt timeout in ms before aborting. Default 10000ms. */
   timeoutMs?: number;
-  /** Number of retries after the first attempt. Default 1. */
+  /**
+   * Number of retries after the first attempt. Default 2 — enough total time
+   * (~30s) for a cold/idle backend (e.g. Render free tier) to wake on the first
+   * request, while the branded loader covers the wait. Successful data is then
+   * cached so subsequent loads are fast.
+   */
   retries?: number;
 };
 
-async function fetchWithTimeout(
+/** Fetch JSON with a bounded timeout + retries. Throws on any failure. */
+async function fetchJsonOrThrow<T>(
   url: string,
-  revalidate: number,
-  tags: string[],
   timeoutMs: number,
-) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(url, {
-      signal: controller.signal,
-      // Cache in the Data Cache under the given tags; reuse until a tag is
-      // invalidated or `revalidate` seconds pass — so navigation is served
-      // from cache and does not re-hit the API each time.
-      next: { revalidate, tags },
-    });
-  } finally {
-    clearTimeout(timer);
+  retries: number,
+): Promise<T> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      // no-store here: caching is handled one layer up by unstable_cache, so we
+      // don't want the fetch Data Cache to also cache (including failures).
+      const res = await fetch(url, { signal: controller.signal, cache: 'no-store' });
+      if (!res.ok) {
+        // 5xx can be a transient cold start — retry; 4xx won't get better.
+        if (res.status >= 500 && attempt < retries) {
+          lastErr = new Error(`HTTP ${res.status}`);
+          continue;
+        }
+        throw new Error(`Request failed (${res.status})`);
+      }
+      return (await res.json()) as T;
+    } catch (err) {
+      lastErr = err;
+      if (attempt < retries) continue;
+      throw err;
+    } finally {
+      clearTimeout(timer);
+    }
   }
+  throw lastErr ?? new Error('Request failed');
 }
 
 export async function serverApi<T = any>(
   path: string,
-  { revalidate = 300, tags = [], timeoutMs = 8000, retries = 1 }: ServerApiOptions = {},
+  { revalidate = 300, tags = [], timeoutMs = 10000, retries = 2 }: ServerApiOptions = {},
 ): Promise<T | null> {
   const url = `${API_URL}/api${path}`;
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      const res = await fetchWithTimeout(url, revalidate, tags, timeoutMs);
-      if (!res.ok) {
-        // 5xx can be a transient cold start — retry; 4xx won't get better.
-        if (res.status >= 500 && attempt < retries) continue;
-        return null;
-      }
-      return (await res.json()) as T;
-    } catch {
-      // network error or timeout/abort — retry if we have attempts left
-      if (attempt < retries) continue;
-      return null;
-    }
+  // Cache the successful result across requests, keyed by path, under `tags`.
+  const getCached = unstable_cache(
+    () => fetchJsonOrThrow<T>(url, timeoutMs, retries),
+    ['serverApi', path],
+    { revalidate, tags },
+  );
+  try {
+    return await getCached();
+  } catch {
+    // Miss/failure is not cached (the fn threw) — render empty, retry next time.
+    return null;
   }
-  return null;
 }
 
 export const auth = {

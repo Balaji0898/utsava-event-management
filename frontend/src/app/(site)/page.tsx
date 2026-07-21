@@ -12,6 +12,11 @@ import { T } from '@/shared/i18n';
 import { formatCurrency } from '@/shared/lib/utils';
 import { Star, ShieldCheck, TrendingUp } from 'lucide-react';
 
+// Render at request time (not prerendered at build) so the homepage always
+// shows live data and never a stale/empty page baked while the backend was
+// cold. Data itself is still cached across requests via `serverApi`.
+export const dynamic = 'force-dynamic';
+
 type Department = {
   id: string;
   name: string;

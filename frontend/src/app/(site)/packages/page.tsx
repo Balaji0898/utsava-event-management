@@ -8,6 +8,10 @@ import { Check } from 'lucide-react';
 
 export const metadata = { title: 'Packages' };
 
+// Render at request time (see homepage note) so packages always load live data
+// rather than a page prerendered empty at build. Data is cached via `serverApi`.
+export const dynamic = 'force-dynamic';
+
 type Pkg = {
   id: string;
   name: string;
