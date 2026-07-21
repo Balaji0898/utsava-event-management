@@ -91,5 +91,13 @@
     "company": "Company",
     "contact": "Contact",
     "rights": "All rights reserved."
+  },
+  "loading": {
+    "brand": "Utsava",
+    "tagline": "Where Every Moment Becomes a Festival",
+    "m1": "Gathering inspiration…",
+    "m2": "Setting the stage…",
+    "m3": "Curating vendors & venues…",
+    "m4": "Almost ready…"
   }
 }

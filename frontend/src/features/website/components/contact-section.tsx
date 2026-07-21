@@ -40,8 +40,19 @@ export function ContactSection() {
             </div>
 
             <div className="mt-8 grid gap-3">
-              <a href={telHref} className="btn-primary w-full justify-center">
-                <Phone size={16} className="mr-2" /> {t('contact.call')} · {site.contact.phoneDisplay}
+              <a
+                href={telHref}
+                className="btn-primary w-full flex-wrap justify-center gap-x-2 gap-y-0.5 px-4 text-center"
+              >
+                <span className="inline-flex items-center gap-2">
+                  <Phone size={16} className="shrink-0" /> {t('contact.call')}
+                </span>
+                <span aria-hidden className="hidden opacity-60 sm:inline">
+                  ·
+                </span>
+                <span className="whitespace-nowrap tabular-nums">
+                  {site.contact.phoneDisplay}
+                </span>
               </a>
               <div className="grid grid-cols-2 gap-3">
                 <a

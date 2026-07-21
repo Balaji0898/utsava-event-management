@@ -1,5 +1,17 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
+/**
+ * Cache tags for public content. Each cached response is stored under one of
+ * these; invalidate a tag (via /api/revalidate) to force the next request to
+ * re-fetch that slice of data instead of serving the cached copy.
+ */
+export const CACHE_TAGS = {
+  departments: 'departments',
+  vendors: 'vendors',
+  packages: 'packages',
+  cms: 'cms',
+} as const;
+
 type FetchOptions = RequestInit & { auth?: boolean };
 
 function getToken() {
@@ -59,6 +71,38 @@ function forceLogout() {
   }
 }
 
+/**
+ * Map a mutated backend path to the cache tag it affects. Vendors, departments,
+ * packages and uploads all cross-reference each other on the public site (e.g.
+ * a vendor edit changes department counts and nested packages), so those bust
+ * everything with "all"; CMS content is isolated.
+ */
+function tagForMutatedPath(path: string): string | null {
+  if (/^\/(auth|bookings)/.test(path)) return null; // no public-cache impact
+  if (path.startsWith('/cms')) return CACHE_TAGS.cms;
+  if (/^\/(vendors|departments|packages|uploads)/.test(path)) return 'all';
+  return null;
+}
+
+/**
+ * After a successful admin mutation, ask Next to invalidate the affected cache
+ * tag(s). Fire-and-forget: never blocks or fails the original request.
+ */
+function bustCacheAfterMutation(path: string, method?: string, token?: string | null) {
+  if (typeof window === 'undefined') return;
+  const verb = (method ?? 'GET').toUpperCase();
+  if (verb === 'GET' || verb === 'HEAD') return;
+  const tag = tagForMutatedPath(path);
+  if (!tag) return;
+  void fetch(`/api/revalidate?tag=${tag}`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    keepalive: true,
+  }).catch(() => {
+    /* best-effort; the time-based fallback still refreshes the cache */
+  });
+}
+
 export async function api<T = any>(
   path: string,
   options: FetchOptions = {},
@@ -96,18 +140,81 @@ export async function api<T = any>(
     const body = await res.json().catch(() => ({}));
     throw new Error(body.message ?? `Request failed (${res.status})`);
   }
+
+  // A successful admin create/update/delete means the underlying public data
+  // changed — bust the relevant cache tag(s) so the site reflects it right away
+  // instead of waiting for the time-based fallback. Fire-and-forget.
+  bustCacheAfterMutation(path, rest.method, token);
+
   return res.json();
 }
 
-// Server-side helper (no auth token; used by RSC for public data)
-export async function serverApi<T = any>(path: string): Promise<T | null> {
+// Server-side helper (no auth token; used by RSC for public data).
+//
+// Public GET data is served from Next's Data Cache instead of hitting the
+// backend on every request/navigation. Each response is stored under one or
+// more cache *tags*; a request only reaches the API when the cache is empty,
+// its tag was invalidated (see /api/revalidate), or the time-based fallback
+// window elapses. A bounded timeout + one retry keeps a cold/slow backend
+// from hanging server rendering (which left pages blank or silently empty).
+type ServerApiOptions = {
+  /**
+   * Time-based fallback for the Data Cache, in seconds. The cached value is
+   * reused for this long before a background refresh; use `revalidateTag`
+   * (via /api/revalidate) to refresh sooner when the data actually changes.
+   * Default: 300s (5 min).
+   */
+  revalidate?: number;
+  /** Cache tags this response is stored under, for on-demand invalidation. */
+  tags?: string[];
+  /** Per-attempt timeout in ms before aborting. Default 8000ms. */
+  timeoutMs?: number;
+  /** Number of retries after the first attempt. Default 1. */
+  retries?: number;
+};
+
+async function fetchWithTimeout(
+  url: string,
+  revalidate: number,
+  tags: string[],
+  timeoutMs: number,
+) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch(`${API_URL}/api${path}`, { cache: 'no-store' });
-    if (!res.ok) return null;
-    return res.json();
-  } catch {
-    return null;
+    return await fetch(url, {
+      signal: controller.signal,
+      // Cache in the Data Cache under the given tags; reuse until a tag is
+      // invalidated or `revalidate` seconds pass — so navigation is served
+      // from cache and does not re-hit the API each time.
+      next: { revalidate, tags },
+    });
+  } finally {
+    clearTimeout(timer);
   }
+}
+
+export async function serverApi<T = any>(
+  path: string,
+  { revalidate = 300, tags = [], timeoutMs = 8000, retries = 1 }: ServerApiOptions = {},
+): Promise<T | null> {
+  const url = `${API_URL}/api${path}`;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetchWithTimeout(url, revalidate, tags, timeoutMs);
+      if (!res.ok) {
+        // 5xx can be a transient cold start — retry; 4xx won't get better.
+        if (res.status >= 500 && attempt < retries) continue;
+        return null;
+      }
+      return (await res.json()) as T;
+    } catch {
+      // network error or timeout/abort — retry if we have attempts left
+      if (attempt < retries) continue;
+      return null;
+    }
+  }
+  return null;
 }
 
 export const auth = {

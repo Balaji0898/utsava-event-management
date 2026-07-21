@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { serverApi } from '@/shared/lib/api';
+import { serverApi, CACHE_TAGS } from '@/shared/lib/api';
 import { Reveal, LiftCard } from '@/shared/motion/primitives';
 import { BackButton } from '@/shared/ui/back-button';
 import { T } from '@/shared/i18n';
@@ -18,7 +18,8 @@ type Pkg = {
 };
 
 export default async function PackagesPage() {
-  const packages = (await serverApi<Pkg[]>('/packages')) ?? [];
+  const packages =
+    (await serverApi<Pkg[]>('/packages', { tags: [CACHE_TAGS.packages] })) ?? [];
 
   return (
     <div className="container-page py-14">

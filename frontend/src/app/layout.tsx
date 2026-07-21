@@ -25,6 +25,11 @@ export const metadata: Metadata = {
     description: 'Premium event management studio. Explore our work and book your celebration.',
     type: 'website',
   },
+  icons: {
+    icon: '/icon.svg',
+    shortcut: '/icon.svg',
+    apple: '/icon.svg',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

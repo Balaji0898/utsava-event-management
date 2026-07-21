@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { serverApi } from '@/shared/lib/api';
+import { serverApi, CACHE_TAGS } from '@/shared/lib/api';
 import { Reveal } from '@/shared/motion/primitives';
 import { BackButton } from '@/shared/ui/back-button';
 import { formatCurrency } from '@/shared/lib/utils';
@@ -30,7 +30,9 @@ type Vendor = {
 };
 
 export default async function VendorDetail({ params }: { params: { slug: string } }) {
-  const vendor = await serverApi<Vendor>(`/vendors/${params.slug}`);
+  const vendor = await serverApi<Vendor>(`/vendors/${params.slug}`, {
+    tags: [CACHE_TAGS.vendors],
+  });
   if (!vendor) notFound();
 
   return (

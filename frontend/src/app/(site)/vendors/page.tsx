@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { serverApi } from '@/shared/lib/api';
+import { serverApi, CACHE_TAGS } from '@/shared/lib/api';
 import { Reveal, LiftCard } from '@/shared/motion/primitives';
 import { BackButton } from '@/shared/ui/back-button';
 import { formatCurrency } from '@/shared/lib/utils';
@@ -37,6 +37,7 @@ export default async function VendorsPage({
 
   const res = await serverApi<{ data: Vendor[]; total: number; pages: number }>(
     `/vendors?${qs.toString()}`,
+    { tags: [CACHE_TAGS.vendors] },
   );
   const vendors = res?.data ?? [];
   const pages = res?.pages ?? 1;

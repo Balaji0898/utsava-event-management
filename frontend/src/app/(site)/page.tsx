@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { serverApi } from '@/shared/lib/api';
+import { serverApi, CACHE_TAGS } from '@/shared/lib/api';
 import { Hero } from '@/features/website/components/hero';
 import { Reveal, Stagger, StaggerItem } from '@/shared/motion/primitives';
 import { TiltCard } from '@/shared/motion/tilt-card';
@@ -48,17 +48,21 @@ type FaqItem = { id: string; question: string; answer: string };
 
 export default async function HomePage() {
   const [departments, vendorsRes, testimonials, faqs] = await Promise.all([
-    serverApi<Department[]>('/departments'),
-    serverApi<{ data: Vendor[] }>('/vendors?featured=true&limit=6'),
-    serverApi<Testimonial[]>('/cms/testimonials'),
-    serverApi<FaqItem[]>('/cms/faqs'),
+    serverApi<Department[]>('/departments', { tags: [CACHE_TAGS.departments] }),
+    serverApi<{ data: Vendor[] }>('/vendors?featured=true&limit=6', {
+      tags: [CACHE_TAGS.vendors],
+    }),
+    serverApi<Testimonial[]>('/cms/testimonials', { tags: [CACHE_TAGS.cms] }),
+    serverApi<FaqItem[]>('/cms/faqs', { tags: [CACHE_TAGS.cms] }),
   ]);
   const featured = vendorsRes?.data ?? [];
 
   // Function Halls showcase
   const fhDept = (departments ?? []).find((d) => d.slug === 'function-halls');
   const hallsRes = fhDept
-    ? await serverApi<{ data: Hall[] }>(`/vendors?departmentId=${fhDept.id}&limit=4`)
+    ? await serverApi<{ data: Hall[] }>(`/vendors?departmentId=${fhDept.id}&limit=4`, {
+        tags: [CACHE_TAGS.vendors],
+      })
     : null;
   const halls = hallsRes?.data ?? [];
 
