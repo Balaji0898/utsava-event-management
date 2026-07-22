@@ -74,6 +74,34 @@ export default function HomePage() {
     <>
       <Hero />
 
+      {/* Best Events — cinematic auto-play showcase, right under the hero */}
+      <section className="container-page pt-6 pb-12">
+        <Reveal>
+          <div className="flex items-end justify-between">
+            <div>
+              <h2 className="text-3xl font-bold">
+                <T k="bestEvents.title" />
+              </h2>
+              <p className="mt-2 text-[rgb(var(--foreground))]/60">
+                <T k="bestEvents.subtitle" />
+              </p>
+            </div>
+            <Link href="/vendors" className="text-sm font-medium text-brand-500">
+              <T k="featured.viewAll" /> →
+            </Link>
+          </div>
+        </Reveal>
+        <div className="mt-6">
+          <Suspense
+            fallback={
+              <div className="skeleton h-[62vh] min-h-[420px] w-full rounded-[1.75rem] sm:rounded-[2.5rem]" />
+            }
+          >
+            <BestEventsSection />
+          </Suspense>
+        </div>
+      </section>
+
       {/* Stats — admin-editable "trusted users" counters, streamed */}
       <section className="container-page relative z-10 mt-6">
         <Suspense fallback={<StatsGrid items={STATS_FALLBACK} />}>
@@ -94,28 +122,6 @@ export default function HomePage() {
         <Suspense fallback={<div className="mt-10"><VendorGridSkeleton count={6} /></div>}>
           <ServicesGrid />
         </Suspense>
-      </section>
-
-      {/* Best Events — one best (featured) vendor per category, as a slider */}
-      <section className="container-page py-10">
-        <Reveal>
-          <div className="flex items-end justify-between">
-            <h2 className="text-3xl font-bold">
-              <T k="bestEvents.title" />
-            </h2>
-            <Link href="/vendors" className="text-sm font-medium text-brand-500">
-              <T k="featured.viewAll" /> →
-            </Link>
-          </div>
-          <p className="mt-2 text-[rgb(var(--foreground))]/60">
-            <T k="bestEvents.subtitle" />
-          </p>
-        </Reveal>
-        <div className="mt-10">
-          <Suspense fallback={<VendorGridSkeleton count={3} />}>
-            <BestEventsSection />
-          </Suspense>
-        </div>
       </section>
 
       {/* Function Halls & Venues */}
