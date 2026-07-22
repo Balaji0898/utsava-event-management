@@ -6,6 +6,7 @@ import { Reveal, Stagger, StaggerItem } from '@/shared/motion/primitives';
 import { TiltCard } from '@/shared/motion/tilt-card';
 import { AnimatedCounter } from '@/shared/motion/counter';
 import { Testimonials } from '@/features/website/components/testimonials';
+import { TestimonialForm } from '@/features/website/components/testimonial-form';
 import { Faq } from '@/features/website/components/faq';
 import { ContactSection } from '@/features/website/components/contact-section';
 import { FunctionHallsSection, type Hall } from '@/features/website/components/function-halls-section';
@@ -53,11 +54,14 @@ type Testimonial = {
 };
 type FaqItem = { id: string; question: string; answer: string };
 
-const stats = [
-  { key: 'stats.events', value: 5200, suffix: '+' },
-  { key: 'stats.vendors', value: 480, suffix: '+' },
-  { key: 'stats.cities', value: 32, suffix: '' },
-  { key: 'stats.customers', value: 12000, suffix: '+' },
+type StatItem = { label: string; value: number; suffix?: string };
+
+// Fallback if the admin hasn't configured stats yet (or the backend is cold).
+const STATS_FALLBACK: StatItem[] = [
+  { label: 'Events Delivered', value: 5200, suffix: '+' },
+  { label: 'Verified Vendors', value: 480, suffix: '+' },
+  { label: 'Cities', value: 32, suffix: '' },
+  { label: 'Happy Customers', value: 12000, suffix: '+' },
 ];
 
 /**
@@ -71,22 +75,11 @@ export default function HomePage() {
     <>
       <Hero />
 
-      {/* Stats — static, paints immediately */}
+      {/* Stats — admin-editable "trusted users" counters, streamed */}
       <section className="container-page relative z-10 mt-6">
-        <Stagger className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {stats.map((s) => (
-            <StaggerItem key={s.key}>
-              <div className="card p-6 text-center">
-                <div className="text-3xl font-extrabold text-brand-500">
-                  <AnimatedCounter to={s.value} suffix={s.suffix} />
-                </div>
-                <div className="mt-1 text-sm text-[rgb(var(--foreground))]/60">
-                  <T k={s.key} />
-                </div>
-              </div>
-            </StaggerItem>
-          ))}
-        </Stagger>
+        <Suspense fallback={<StatsGrid items={STATS_FALLBACK} />}>
+          <StatsSection />
+        </Suspense>
       </section>
 
       {/* Services / departments */}
@@ -165,6 +158,29 @@ export default function HomePage() {
 /* ------------------------------------------------------------------ */
 /* Streamed, data-driven sections — each fetches independently.        */
 /* ------------------------------------------------------------------ */
+
+function StatsGrid({ items }: { items: StatItem[] }) {
+  return (
+    <Stagger className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      {items.map((s, i) => (
+        <StaggerItem key={`${s.label}-${i}`}>
+          <div className="card p-6 text-center">
+            <div className="text-3xl font-extrabold text-brand-500">
+              <AnimatedCounter to={s.value} suffix={s.suffix ?? ''} />
+            </div>
+            <div className="mt-1 text-sm text-[rgb(var(--foreground))]/60">{s.label}</div>
+          </div>
+        </StaggerItem>
+      ))}
+    </Stagger>
+  );
+}
+
+async function StatsSection() {
+  const data = await serverApi<{ items?: StatItem[] }>('/cms/stats', { tags: [CACHE_TAGS.cms] });
+  const items = data?.items?.length ? data.items : STATS_FALLBACK;
+  return <StatsGrid items={items} />;
+}
 
 async function ServicesGrid() {
   const departments =
@@ -271,7 +287,14 @@ async function HallsSection() {
 async function TestimonialsSection() {
   const testimonials =
     (await serverApi<Testimonial[]>('/cms/testimonials', { tags: [CACHE_TAGS.cms] })) ?? [];
-  return <Testimonials items={testimonials} />;
+  return (
+    <>
+      <Testimonials items={testimonials} />
+      <section className="container-page pb-10">
+        <TestimonialForm />
+      </section>
+    </>
+  );
 }
 
 async function FaqSection() {

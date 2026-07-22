@@ -84,6 +84,12 @@ h3,
   }
 }
 
+/* Launch splash: hide instantly on repeat loads within a session (set by the
+   blocking inline script in the root layout) to avoid any flash. */
+html[data-launched] #launch-overlay {
+  display: none !important;
+}
+
 /* Loading skeleton shimmer */
 @keyframes shimmer {
   0% {

@@ -2,6 +2,11 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { ThemeProvider } from '@/shared/theme/theme-provider';
 import { I18nProvider } from '@/shared/i18n';
+import { LaunchScreen } from '@/shared/ui/launch-screen';
+
+// Runs before paint: if the launch splash was already shown this session, mark
+// <html> so CSS hides #launch-overlay immediately (no flash on repeat loads).
+const launchGuard = `try{if(sessionStorage.getItem('utsava_launched'))document.documentElement.setAttribute('data-launched','')}catch(e){}`;
 
 export const metadata: Metadata = {
   title: {
@@ -43,10 +48,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
         <style>{`:root{--font-sans:'Inter',system-ui,sans-serif;--font-display:'Playfair Display',Georgia,serif}`}</style>
+        <script dangerouslySetInnerHTML={{ __html: launchGuard }} />
       </head>
       <body>
         <ThemeProvider>
-          <I18nProvider>{children}</I18nProvider>
+          <I18nProvider>
+            <LaunchScreen />
+            {children}
+          </I18nProvider>
         </ThemeProvider>
       </body>
     </html>

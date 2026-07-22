@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
@@ -16,8 +17,12 @@ import {
   UpdateBlockDto,
   CreateTestimonialDto,
   UpdateTestimonialDto,
+  SubmitTestimonialDto,
   CreateFaqDto,
   UpdateFaqDto,
+  UpdateContactDto,
+  UpdateStatsDto,
+  UpdateLegalDto,
 } from './dto/cms.dto';
 import { Public } from '../auth/decorators/public.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -68,6 +73,13 @@ export class CmsController {
     return this.service.findTestimonials(all === 'true');
   }
 
+  // Public end-user submission — created unapproved, hidden until an admin approves.
+  @Public()
+  @Post('testimonials/submit')
+  submitTestimonial(@Body() dto: SubmitTestimonialDto) {
+    return this.service.submitTestimonial(dto);
+  }
+
   @ApiBearerAuth()
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @Post('testimonials')
@@ -115,5 +127,47 @@ export class CmsController {
   @Delete('faqs/:id')
   removeFaq(@Param('id') id: string) {
     return this.service.removeFaq(id);
+  }
+
+  // ---------- Contact details (singleton) ----------
+  @Public()
+  @Get('contact')
+  getContact() {
+    return this.service.getContact();
+  }
+
+  @ApiBearerAuth()
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Put('contact')
+  updateContact(@Body() dto: UpdateContactDto) {
+    return this.service.updateContact(dto);
+  }
+
+  // ---------- Home stats / trusted-users counters (singleton) ----------
+  @Public()
+  @Get('stats')
+  getStats() {
+    return this.service.getStats();
+  }
+
+  @ApiBearerAuth()
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Put('stats')
+  updateStats(@Body() dto: UpdateStatsDto) {
+    return this.service.updateStats(dto);
+  }
+
+  // ---------- Legal pages (terms, privacy, ...) ----------
+  @Public()
+  @Get('legal/:slug')
+  getLegal(@Param('slug') slug: string) {
+    return this.service.getLegal(slug);
+  }
+
+  @ApiBearerAuth()
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Put('legal/:slug')
+  updateLegal(@Param('slug') slug: string, @Body() dto: UpdateLegalDto) {
+    return this.service.updateLegal(slug, dto);
   }
 }

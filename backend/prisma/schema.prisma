@@ -276,11 +276,13 @@ model Testimonial {
   avatar    String?
   rating    Int      @default(5)
   message   String
+  approved  Boolean  @default(false) // public submissions start unapproved; admin approves
   sortOrder Int      @default(0)
   status    Status   @default(ACTIVE)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([approved, status, sortOrder])
   @@index([status, sortOrder])
 }
 

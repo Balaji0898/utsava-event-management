@@ -4,9 +4,11 @@ import { motion } from 'framer-motion';
 import { Phone, MessageCircle, Mail, Sparkles } from 'lucide-react';
 import { useI18n } from '@/shared/i18n';
 import { site, telHref, whatsappHref, mailHref } from '@/shared/config/site';
+import { useSiteContact } from '@/shared/config/site-contact-context';
 
 export function ContactSection() {
   const { t } = useI18n();
+  const contact = useSiteContact();
   return (
     <section id="contact" className="container-page py-20">
       <div className="relative overflow-hidden rounded-[2.5rem] border bg-ink text-white shadow-luxe">
@@ -28,20 +30,20 @@ export function ContactSection() {
           >
             <div className="flex items-center gap-4">
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gold-gradient text-2xl font-bold text-ink">
-                {site.contact.manager.charAt(0)}
+                {contact.manager.charAt(0)}
               </div>
               <div>
                 <div className="text-xs uppercase tracking-wide text-brand-300">
                   {t('contact.manager')}
                 </div>
-                <div className="font-display text-2xl font-bold">{site.contact.manager}</div>
-                <div className="text-sm text-white/60">{site.contact.role}</div>
+                <div className="font-display text-2xl font-bold">{contact.manager}</div>
+                <div className="text-sm text-white/60">{contact.role}</div>
               </div>
             </div>
 
             <div className="mt-8 grid gap-3">
               <a
-                href={telHref}
+                href={telHref(contact.phone)}
                 className="btn-primary w-full flex-wrap justify-center gap-x-2 gap-y-0.5 px-4 text-center"
               >
                 <span className="inline-flex items-center gap-2">
@@ -51,19 +53,19 @@ export function ContactSection() {
                   ·
                 </span>
                 <span className="whitespace-nowrap tabular-nums">
-                  {site.contact.phoneDisplay}
+                  {contact.phoneDisplay}
                 </span>
               </a>
               <div className="grid grid-cols-2 gap-3">
                 <a
-                  href={whatsappHref}
+                  href={whatsappHref(contact.whatsapp)}
                   target="_blank"
                   className="inline-flex items-center justify-center rounded-full bg-emerald-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-600"
                 >
                   <MessageCircle size={16} className="mr-2" /> {t('contact.whatsapp')}
                 </a>
                 <a
-                  href={mailHref}
+                  href={mailHref(contact.email)}
                   className="inline-flex items-center justify-center rounded-full border border-white/30 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
                 >
                   <Mail size={16} className="mr-2" /> {t('contact.email')}

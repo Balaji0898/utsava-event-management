@@ -328,27 +328,40 @@ async function main() {
     },
   });
 
+  const contactData = {
+    manager: 'Balaji Guggilam',
+    role: 'Event Manager & Owner',
+    phone: '8790233572',
+    phoneDisplay: '+91 87902 33572',
+    whatsapp: '918790233572',
+    email: 'hello@utsava.events',
+  };
   await prisma.cmsBlock.upsert({
     where: { key: 'site-contact' },
-    update: {
-      data: {
-        manager: 'Balaji Guggilam',
-        role: 'Event Manager & Owner',
-        phone: '8790233572',
-        whatsapp: '918790233572',
-        email: 'hello@utsava.events',
-      },
-    },
+    update: { data: contactData },
     create: {
       key: 'site-contact',
       type: CmsBlockType.SECTION,
       title: 'Contact',
+      data: contactData,
+    },
+  });
+
+  // ---- Home stats ("trusted users" counters) ----
+  await prisma.cmsBlock.upsert({
+    where: { key: 'home-stats' },
+    update: {},
+    create: {
+      key: 'home-stats',
+      type: CmsBlockType.SECTION,
+      title: 'Home stats',
       data: {
-        manager: 'Balaji Guggilam',
-        role: 'Event Manager & Owner',
-        phone: '8790233572',
-        whatsapp: '918790233572',
-        email: 'hello@utsava.events',
+        items: [
+          { label: 'Events Delivered', value: 5200, suffix: '+' },
+          { label: 'Verified Vendors', value: 480, suffix: '+' },
+          { label: 'Cities', value: 32, suffix: '' },
+          { label: 'Happy Customers', value: 12000, suffix: '+' },
+        ],
       },
     },
   });
@@ -382,6 +395,7 @@ async function main() {
         rating: 5,
         avatar: `https://i.pravatar.cc/150?img=${t.img}`,
         sortOrder: i,
+        approved: true,
       },
     });
   }

@@ -99,5 +99,17 @@
     "m2": "Setting the stage…",
     "m3": "Curating vendors & venues…",
     "m4": "Almost ready…"
+  },
+  "reviewForm": {
+    "title": "Share your experience",
+    "subtitle": "Loved working with us? Leave a review — it appears after a quick check.",
+    "name": "Your name",
+    "role": "Role (e.g. Bride, Groom)",
+    "rating": "Your rating",
+    "message": "Your review",
+    "submit": "Submit review",
+    "sending": "Submitting…",
+    "thanksTitle": "Thank you!",
+    "thanksBody": "Your review has been submitted and will appear once approved."
   }
 }

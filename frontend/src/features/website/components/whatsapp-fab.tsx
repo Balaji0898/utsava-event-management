@@ -3,11 +3,13 @@
 import { motion } from 'framer-motion';
 import { MessageCircle } from 'lucide-react';
 import { whatsappHref } from '@/shared/config/site';
+import { useSiteContact } from '@/shared/config/site-contact-context';
 
 export function WhatsappFab() {
+  const contact = useSiteContact();
   return (
     <motion.a
-      href={whatsappHref}
+      href={whatsappHref(contact.whatsapp)}
       target="_blank"
       aria-label="Chat on WhatsApp"
       initial={{ scale: 0, opacity: 0 }}

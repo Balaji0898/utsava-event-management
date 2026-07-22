@@ -5,9 +5,11 @@ import { Phone, MessageCircle, Mail, MapPin } from 'lucide-react';
 import { useI18n } from '@/shared/i18n';
 import { Logo } from '@/shared/ui/logo';
 import { site, telHref, whatsappHref, mailHref } from '@/shared/config/site';
+import { useSiteContact } from '@/shared/config/site-contact-context';
 
 export function Footer() {
   const { t } = useI18n();
+  const contact = useSiteContact();
   return (
     <footer className="mt-24 border-t hex-pattern">
       <div className="container-page grid gap-10 py-16 md:grid-cols-4">
@@ -39,17 +41,17 @@ export function Footer() {
           <h4 className="mb-3 text-sm font-semibold">{t('footer.contact')}</h4>
           <div className="text-sm text-[rgb(var(--foreground))]/70">
             <div className="font-display text-base font-semibold text-[rgb(var(--foreground))]">
-              {site.contact.manager}
+              {contact.manager}
             </div>
-            <div className="text-xs text-brand-600 dark:text-brand-400">{site.contact.role}</div>
-            <a href={telHref} className="mt-3 flex items-center gap-2 hover:text-brand-500">
-              <Phone size={15} /> {site.contact.phoneDisplay}
+            <div className="text-xs text-brand-600 dark:text-brand-400">{contact.role}</div>
+            <a href={telHref(contact.phone)} className="mt-3 flex items-center gap-2 hover:text-brand-500">
+              <Phone size={15} /> {contact.phoneDisplay}
             </a>
-            <a href={whatsappHref} target="_blank" className="mt-2 flex items-center gap-2 hover:text-brand-500">
+            <a href={whatsappHref(contact.whatsapp)} target="_blank" className="mt-2 flex items-center gap-2 hover:text-brand-500">
               <MessageCircle size={15} /> WhatsApp
             </a>
-            <a href={mailHref} className="mt-2 flex items-center gap-2 hover:text-brand-500">
-              <Mail size={15} /> {site.contact.email}
+            <a href={mailHref(contact.email)} className="mt-2 flex items-center gap-2 hover:text-brand-500">
+              <Mail size={15} /> {contact.email}
             </a>
             <div className="mt-2 flex items-center gap-2">
               <MapPin size={15} /> Bengaluru · Hyderabad · Chennai
