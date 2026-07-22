@@ -69,6 +69,12 @@ const inputCls =
 export function VendorForm({ initial }: { initial?: Partial<VendorData> | null }) {
   const router = useRouter();
   const [form, setForm] = useState<VendorData>({ ...empty, ...initial });
+  // Raw text for the comma-separated cities field, so the user can type commas
+  // and spaces freely (parsing to an array on every keystroke would strip the
+  // comma they just typed). Kept in sync with form.availableCities.
+  const [citiesText, setCitiesText] = useState<string>(
+    () => (initial?.availableCities ?? []).join(', '),
+  );
   const [departments, setDepartments] = useState<Department[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -100,11 +106,19 @@ export function VendorForm({ initial }: { initial?: Partial<VendorData> | null }
           auth: true,
           body: JSON.stringify(payload),
         });
+        router.push('/admin/vendors');
+        router.refresh();
       } else {
-        await api('/vendors', { method: 'POST', auth: true, body: JSON.stringify(payload) });
+        // On create, go to the vendor's edit page so packages (only manageable
+        // once the vendor exists) and remaining media can be added right away.
+        const created = await api<{ id: string }>('/vendors', {
+          method: 'POST',
+          auth: true,
+          body: JSON.stringify(payload),
+        });
+        router.push(created?.id ? `/admin/vendors/${created.id}` : '/admin/vendors');
+        router.refresh();
       }
-      router.push('/admin/vendors');
-      router.refresh();
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -153,9 +167,11 @@ export function VendorForm({ initial }: { initial?: Partial<VendorData> | null }
           <Field label="Experience (years)">
             <input
               type="number"
+              min={0}
               className={inputCls}
-              value={form.experience}
-              onChange={(e) => set('experience', Number(e.target.value))}
+              placeholder="0"
+              value={form.experience || ''}
+              onChange={(e) => set('experience', e.target.value === '' ? 0 : Number(e.target.value))}
             />
           </Field>
           <Field label="Location">
@@ -164,13 +180,16 @@ export function VendorForm({ initial }: { initial?: Partial<VendorData> | null }
           <Field label="Available cities (comma separated)" full>
             <input
               className={inputCls}
-              value={form.availableCities.join(', ')}
-              onChange={(e) =>
+              placeholder="Hyderabad, Bengaluru, Chennai"
+              value={citiesText}
+              onChange={(e) => {
+                const raw = e.target.value;
+                setCitiesText(raw);
                 set(
                   'availableCities',
-                  e.target.value.split(',').map((c) => c.trim()).filter(Boolean),
-                )
-              }
+                  raw.split(',').map((c) => c.trim()).filter(Boolean),
+                );
+              }}
             />
           </Field>
           <Field label="Description" full>
@@ -227,13 +246,35 @@ export function VendorForm({ initial }: { initial?: Partial<VendorData> | null }
       <Section title="Pricing & Visibility">
         <div className="grid gap-4 md:grid-cols-3">
           <Field label="Price from (₹)">
-            <input type="number" className={inputCls} value={form.priceFrom} onChange={(e) => set('priceFrom', Number(e.target.value))} />
+            <input
+              type="number"
+              min={0}
+              className={inputCls}
+              placeholder="0"
+              value={form.priceFrom || ''}
+              onChange={(e) => set('priceFrom', e.target.value === '' ? 0 : Number(e.target.value))}
+            />
           </Field>
           <Field label="Price to (₹)">
-            <input type="number" className={inputCls} value={form.priceTo} onChange={(e) => set('priceTo', Number(e.target.value))} />
+            <input
+              type="number"
+              min={0}
+              className={inputCls}
+              placeholder="0"
+              value={form.priceTo || ''}
+              onChange={(e) => set('priceTo', e.target.value === '' ? 0 : Number(e.target.value))}
+            />
           </Field>
           <Field label="Discount (%)">
-            <input type="number" className={inputCls} value={form.discountPercent} onChange={(e) => set('discountPercent', Number(e.target.value))} />
+            <input
+              type="number"
+              min={0}
+              max={100}
+              className={inputCls}
+              placeholder="0"
+              value={form.discountPercent || ''}
+              onChange={(e) => set('discountPercent', e.target.value === '' ? 0 : Number(e.target.value))}
+            />
           </Field>
         </div>
         <div className="mt-4 flex flex-wrap gap-4">
