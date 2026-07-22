@@ -30,6 +30,7 @@ export function Footer() {
           title={t('footer.company')}
           links={[
             [t('nav.services'), '/#services'],
+            ['Testimonials', '/testimonials'],
             ['FAQ', '/#faq'],
             ['Privacy', '/privacy'],
             ['Terms', '/terms'],

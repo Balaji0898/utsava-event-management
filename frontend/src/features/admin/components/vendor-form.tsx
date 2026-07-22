@@ -278,10 +278,15 @@ export function VendorForm({ initial }: { initial?: Partial<VendorData> | null }
           </Field>
         </div>
         <div className="mt-4 flex flex-wrap gap-4">
-          {(['available', 'featured', 'trending', 'verified'] as const).map((flag) => (
-            <label key={flag} className="flex items-center gap-2 text-sm capitalize">
+          {([
+            ['available', 'Available'],
+            ['featured', 'Best Event (home slider — one per category)'],
+            ['trending', 'Trending'],
+            ['verified', 'Verified'],
+          ] as const).map(([flag, label]) => (
+            <label key={flag} className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={form[flag]} onChange={(e) => set(flag, e.target.checked)} className="h-4 w-4 accent-brand-500" />
-              {flag}
+              {label}
             </label>
           ))}
           <label className="flex items-center gap-2 text-sm">

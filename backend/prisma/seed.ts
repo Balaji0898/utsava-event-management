@@ -1,5 +1,6 @@
 import { PrismaClient, Role, PriceUnit, CmsBlockType } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import { seedOutdoorEvents } from './outdoor-events';
 
 const prisma = new PrismaClient();
 
@@ -311,6 +312,9 @@ async function main() {
 
   // ---- Function Halls (venues with capacity + price range) ----
   await seedFunctionHalls();
+
+  // ---- Outdoor Events (gardens, beaches, rooftops) ----
+  await seedOutdoorEvents(prisma);
 
   // ---- CMS: hero + about blocks ----
   await prisma.cmsBlock.upsert({

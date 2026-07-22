@@ -23,10 +23,15 @@ export interface VendorQuery {
 export class VendorsService {
   constructor(private prisma: PrismaService) {}
 
-  create(dto: CreateVendorDto) {
-    return this.prisma.vendor.create({
+  async create(dto: CreateVendorDto) {
+    const vendor = await this.prisma.vendor.create({
       data: { ...dto, slug: dto.slug ?? slugify(dto.name) },
     });
+    // "Best event" = featured, one per category (department).
+    if (vendor.featured) {
+      await this.demoteOtherFeatured(vendor.id, vendor.departmentId);
+    }
+    return vendor;
   }
 
   async findAll(q: VendorQuery) {
@@ -92,7 +97,25 @@ export class VendorsService {
 
   async update(id: string, dto: UpdateVendorDto) {
     await this.ensureExists(id);
-    return this.prisma.vendor.update({ where: { id }, data: dto });
+    const vendor = await this.prisma.vendor.update({ where: { id }, data: dto });
+    // If this vendor was just marked as the "best event" (featured), make it the
+    // only featured one in its category by unmarking the others.
+    if (dto.featured === true) {
+      await this.demoteOtherFeatured(vendor.id, vendor.departmentId);
+    }
+    return vendor;
+  }
+
+  /** Keep at most one featured ("best event") vendor per department/category. */
+  private async demoteOtherFeatured(vendorId: string | null, departmentId: string) {
+    await this.prisma.vendor.updateMany({
+      where: {
+        departmentId,
+        featured: true,
+        ...(vendorId ? { id: { not: vendorId } } : {}),
+      },
+      data: { featured: false },
+    });
   }
 
   async remove(id: string) {

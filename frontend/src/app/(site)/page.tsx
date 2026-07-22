@@ -10,10 +10,9 @@ import { TestimonialForm } from '@/features/website/components/testimonial-form'
 import { Faq } from '@/features/website/components/faq';
 import { ContactSection } from '@/features/website/components/contact-section';
 import { FunctionHallsSection, type Hall } from '@/features/website/components/function-halls-section';
+import { BestEventsSlider, type BestEventSlide } from '@/features/website/components/best-events-slider';
 import { VendorGridSkeleton } from '@/shared/ui/skeletons';
 import { T } from '@/shared/i18n';
-import { formatCurrency } from '@/shared/lib/utils';
-import { Star, ShieldCheck, TrendingUp } from 'lucide-react';
 
 // Render at request time (not prerendered at build) so the homepage always
 // shows live data and never a stale/empty page baked while the backend was
@@ -41,7 +40,7 @@ type Vendor = {
   priceFrom: string | number;
   verified: boolean;
   trending: boolean;
-  department?: { name: string };
+  department?: { id: string; name: string };
 };
 
 type Testimonial = {
@@ -97,21 +96,26 @@ export default function HomePage() {
         </Suspense>
       </section>
 
-      {/* Featured vendors */}
+      {/* Best Events — one best (featured) vendor per category, as a slider */}
       <section className="container-page py-10">
         <Reveal>
           <div className="flex items-end justify-between">
             <h2 className="text-3xl font-bold">
-              <T k="featured.title" />
+              <T k="bestEvents.title" />
             </h2>
             <Link href="/vendors" className="text-sm font-medium text-brand-500">
               <T k="featured.viewAll" /> →
             </Link>
           </div>
+          <p className="mt-2 text-[rgb(var(--foreground))]/60">
+            <T k="bestEvents.subtitle" />
+          </p>
         </Reveal>
-        <Suspense fallback={<div className="mt-10"><VendorGridSkeleton count={6} /></div>}>
-          <FeaturedGrid />
-        </Suspense>
+        <div className="mt-10">
+          <Suspense fallback={<VendorGridSkeleton count={3} />}>
+            <BestEventsSection />
+          </Suspense>
+        </div>
       </section>
 
       {/* Function Halls & Venues */}
@@ -221,55 +225,39 @@ async function ServicesGrid() {
   );
 }
 
-async function FeaturedGrid() {
-  const vendorsRes = await serverApi<{ data: Vendor[] }>('/vendors?featured=true&limit=6', {
-    tags: [CACHE_TAGS.vendors],
-  });
-  const featured = vendorsRes?.data ?? [];
+async function BestEventsSection() {
+  const [departments, featuredRes] = await Promise.all([
+    serverApi<Department[]>('/departments', { tags: [CACHE_TAGS.departments] }),
+    serverApi<{ data: Vendor[] }>('/vendors?featured=true&limit=50', {
+      tags: [CACHE_TAGS.vendors],
+    }),
+  ]);
+  const depts = departments ?? [];
+  const featured = featuredRes?.data ?? [];
 
-  return (
-    <Stagger className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-      {featured.map((v) => (
-        <StaggerItem key={v.id}>
-          <TiltCard className="card h-full overflow-hidden">
-            <Link href={`/vendors/${v.slug}`}>
-              <div className="relative h-40 overflow-hidden">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={v.coverImage ?? ''}
-                  alt={v.name}
-                  className="h-full w-full object-cover"
-                />
-              </div>
-              <div className="p-5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-brand-500">
-                    {v.department?.name}
-                  </span>
-                  <span className="flex items-center gap-1 text-xs">
-                    <Star size={12} className="fill-yellow-400 text-yellow-400" />
-                    {v.rating} ({v.reviewCount})
-                  </span>
-                </div>
-                <h3 className="mt-2 flex items-center gap-1 text-lg font-semibold">
-                  {v.name}
-                  {v.verified && <ShieldCheck size={16} className="text-brand-500" />}
-                  {v.trending && <TrendingUp size={16} className="text-amber-500" />}
-                </h3>
-                <p className="mt-1 line-clamp-2 text-sm text-[rgb(var(--foreground))]/60">
-                  {v.description}
-                </p>
-                <div className="mt-4 text-sm">
-                  <T k="featured.from" />{' '}
-                  <span className="font-bold">{formatCurrency(Number(v.priceFrom))}</span>
-                </div>
-              </div>
-            </Link>
-          </TiltCard>
-        </StaggerItem>
-      ))}
-    </Stagger>
-  );
+  // One best (featured) vendor per category; first wins (dedupe legacy data).
+  const bestByDept = new Map<string, Vendor>();
+  for (const v of featured) {
+    const dId = v.department?.id;
+    if (dId && !bestByDept.has(dId)) bestByDept.set(dId, v);
+  }
+
+  // One slide per category — best vendor if any, otherwise the category banner.
+  const slides: BestEventSlide[] = depts.map((d) => {
+    const v = bestByDept.get(d.id);
+    return {
+      category: d.name,
+      icon: d.icon,
+      image: v?.coverImage ?? d.banner,
+      title: v?.name ?? d.name,
+      description: v?.description ?? d.description,
+      priceFrom: v ? Number(v.priceFrom) : undefined,
+      href: v ? `/vendors/${v.slug}` : `/vendors?departmentId=${d.id}`,
+      isBest: Boolean(v),
+    };
+  });
+
+  return <BestEventsSlider slides={slides} />;
 }
 
 async function HallsSection() {

@@ -40,8 +40,13 @@
     "viewAll": "View all",
     "from": "From"
   },
+  "bestEvents": {
+    "title": "Best Events",
+    "subtitle": "Our standout work — the best from each category."
+  },
   "testimonials": {
-    "title": "Loved by our clients"
+    "title": "Loved by our clients",
+    "seeAll": "See all"
   },
   "faq": {
     "title": "Frequently asked questions"
