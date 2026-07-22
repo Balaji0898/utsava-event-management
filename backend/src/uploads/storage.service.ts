@@ -35,11 +35,15 @@ export class StorageService {
     return `${Date.now()}-${randomBytes(6).toString('hex')}${ext}`;
   }
 
-  async upload(file: Express.Multer.File, folder = 'general'): Promise<StoredFile> {
+  async upload(
+    file: Express.Multer.File,
+    folder = 'general',
+    baseUrl?: string,
+  ): Promise<StoredFile> {
     if (this.cloudinaryEnabled) {
       return this.uploadToCloudinary(file, folder);
     }
-    return this.uploadToDisk(file, folder);
+    return this.uploadToDisk(file, folder, baseUrl);
   }
 
   async remove(asset: { provider: MediaProvider; publicId?: string | null; url: string }) {
@@ -65,13 +69,17 @@ export class StorageService {
   private async uploadToDisk(
     file: Express.Multer.File,
     folder: string,
+    baseUrl?: string,
   ): Promise<StoredFile> {
     const dir = join(this.uploadDir, folder);
     await fs.mkdir(dir, { recursive: true });
     const filename = this.safeName(file.originalname);
     await fs.writeFile(join(dir, filename), file.buffer);
+    // Prefer the request-derived base URL (the host that served the upload);
+    // fall back to APP_URL, then localhost.
+    const base = (baseUrl || this.appUrl).replace(/\/+$/, '');
     return {
-      url: `${this.appUrl}/uploads/${folder}/${filename}`,
+      url: `${base}/uploads/${folder}/${filename}`,
       provider: MediaProvider.LOCAL,
     };
   }

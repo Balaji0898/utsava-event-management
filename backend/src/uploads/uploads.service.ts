@@ -9,8 +9,8 @@ export class UploadsService {
     private storage: StorageService,
   ) {}
 
-  async upload(file: Express.Multer.File, folder = 'general') {
-    const stored = await this.storage.upload(file, folder);
+  async upload(file: Express.Multer.File, folder = 'general', baseUrl?: string) {
+    const stored = await this.storage.upload(file, folder, baseUrl);
     return this.prisma.mediaAsset.create({
       data: {
         url: stored.url,

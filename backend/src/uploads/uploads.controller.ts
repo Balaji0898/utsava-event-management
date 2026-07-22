@@ -9,11 +9,13 @@ import {
   FileTypeValidator,
   Post,
   Query,
+  Req,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
+import { Request } from 'express';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -58,10 +60,15 @@ export class UploadsController {
       }),
     )
     file: Express.Multer.File,
+    @Req() req: Request,
     @Query('folder') folder?: string,
   ) {
     if (!file) throw new BadRequestException('No file provided');
-    return this.service.upload(file, folder ?? 'general');
+    // Build the public base URL from the request that actually reached this
+    // backend (proxy-aware), so locally-stored files resolve to THIS server —
+    // not whatever APP_URL happens to be set to. Fixes uploads 404'ing when
+    // APP_URL points at the frontend domain.
+    return this.service.upload(file, folder ?? 'general', baseUrlFromRequest(req));
   }
 
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
@@ -75,4 +82,19 @@ export class UploadsController {
   remove(@Param('id') id: string) {
     return this.service.remove(id);
   }
+}
+
+/**
+ * Derive the public base URL (scheme + host) from the request, honouring the
+ * reverse-proxy headers Render/Vercel/etc. add. This is the host that served
+ * the upload and will serve the file back, so it's always correct.
+ */
+function baseUrlFromRequest(req: Request): string | undefined {
+  const proto = (
+    ((req.headers['x-forwarded-proto'] as string) || req.protocol || 'https')
+      .split(',')[0]
+      .trim()
+  );
+  const host = (req.headers['x-forwarded-host'] as string) || req.headers.host;
+  return host ? `${proto}://${host}` : undefined;
 }
