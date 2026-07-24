@@ -1,13 +1,16 @@
-<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 110 110" width="110" height="110" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#E3C877"/>
-      <stop offset="45%" stop-color="#D4AF37"/>
-      <stop offset="100%" stop-color="#A9861F"/>
+    <linearGradient id="gd" x1="15%" y1="5%" x2="85%" y2="95%">
+      <stop offset="0%" stop-color="#F5CC50"/>
+      <stop offset="55%" stop-color="#E09A18"/>
+      <stop offset="100%" stop-color="#B07010"/>
     </linearGradient>
   </defs>
-  <rect width="64" height="64" rx="15" fill="url(#gold)"/>
-  <path d="M18 16v14a14 14 0 0 0 28 0V16"
-        fill="none" stroke="#141210" stroke-width="5" stroke-linecap="round"/>
-  <path d="M32 38c3 0 5.4 2.9 5.4 6.1S35 50 32 50s-5.4-1.8-5.4-5S29 38 32 38z" fill="#141210"/>
+  <rect width="110" height="110" rx="26" fill="#07070C"/>
+  <circle cx="55" cy="55" r="43" fill="none" stroke="url(#gd)" stroke-width="1.4" opacity="0.72"/>
+  <path d="M55 105 L58.5 94 L55 91 L51.5 94 Z" fill="url(#gd)"/>
+  <path d="M105 55 L94 58.5 L91 55 L94 51.5 Z" fill="url(#gd)"/>
+  <path d="M5 55 L16 58.5 L19 55 L16 51.5 Z" fill="url(#gd)"/>
+  <path d="M37 35 L37 62 Q37 77 55 77 Q73 77 73 62 L73 35" fill="none" stroke="url(#gd)" stroke-width="11.5" stroke-linecap="round"/>
+  <path d="M55 33 C63 23 65 11 55 5 C45 11 47 23 55 33 Z" fill="url(#gd)"/>
 </svg>

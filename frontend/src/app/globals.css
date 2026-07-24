@@ -133,17 +133,18 @@ html[data-launched] #launch-overlay {
   justify-content: center;
   overflow: hidden;
   padding: 0 1.5rem;
-  background: rgb(var(--background));
+  /* Cinematic dark stage (theme-independent) so the gold mark always glows. */
+  background: radial-gradient(ellipse at 50% 35%, #14101c 0%, #07070c 60%, #030308 100%);
   /* Failsafe self-dismiss: fade out at ~1.8s even if JS never runs. */
   animation: launch-fade 0.6s ease 1.8s forwards;
 }
 .launch-overlay__bg {
   position: absolute;
   inset: 0;
-  opacity: 0.7;
+  opacity: 0.6;
   background:
-    radial-gradient(1200px 600px at 10% -10%, rgba(212, 175, 55, 0.22), transparent),
-    radial-gradient(1000px 500px at 90% 10%, rgba(227, 200, 119, 0.18), transparent);
+    radial-gradient(1000px 520px at 100% -5%, rgba(212, 175, 55, 0.12), transparent),
+    radial-gradient(900px 500px at 0% 100%, rgba(227, 200, 119, 0.08), transparent);
 }
 .launch-overlay__inner {
   position: relative;
@@ -263,6 +264,82 @@ html[data-launched] #launch-overlay {
     visibility: hidden;
     pointer-events: none;
   }
+}
+
+/* ===== Brand mark (diya-U) animations — CSS so they run on the compositor
+   and animate even while the JS main thread is hydrating. Activated by the
+   .brand-mark--animated modifier on the <svg>. ===== */
+.brand-mark .bm-flame,
+.brand-mark .bm-spark,
+.brand-mark .bm-ring {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.brand-mark--animated .bm-flame {
+  transform-origin: 50% 100%;
+  animation: bm-flame 1.5s ease-in-out infinite;
+}
+.brand-mark--animated .bm-glow {
+  animation: bm-glow 1.5s ease-in-out infinite;
+}
+.brand-mark--animated .bm-ring {
+  animation: bm-ring 2.6s ease-in-out infinite;
+}
+.brand-mark--animated .bm-spark {
+  animation: bm-spark 2.2s ease-in-out infinite;
+}
+.brand-mark--animated .bm-spark-e {
+  animation-delay: 0.4s;
+}
+.brand-mark--animated .bm-spark-w {
+  animation-delay: 0.8s;
+}
+@keyframes bm-flame {
+  0%,
+  100% {
+    transform: scaleY(1) scaleX(1) translateY(0);
+  }
+  30% {
+    transform: scaleY(1.12) scaleX(0.94) translateY(-1px);
+  }
+  60% {
+    transform: scaleY(0.96) scaleX(1.03) translateY(0.5px);
+  }
+}
+@keyframes bm-glow {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.12);
+  }
+}
+@keyframes bm-ring {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+@keyframes bm-spark {
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+/* Cinzel brand wordmark shimmer on the launch splash */
+.launch-wordmark {
+  font-family: var(--font-brand, 'Cinzel', Georgia, serif);
 }
 
 /* Accessibility: honor the OS "reduce motion" setting — neutralize the
