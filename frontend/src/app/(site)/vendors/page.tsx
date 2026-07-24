@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { serverApi, CACHE_TAGS } from '@/shared/lib/api';
-import { Reveal, LiftCard } from '@/shared/motion/primitives';
+import { Reveal } from '@/shared/motion/primitives';
+import { TiltCard } from '@/shared/motion/tilt-card';
 import { BackButton } from '@/shared/ui/back-button';
 import { formatCurrency } from '@/shared/lib/utils';
 import { Star, ShieldCheck } from 'lucide-react';
@@ -66,7 +67,7 @@ export default async function VendorsPage({
 
       <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {vendors.map((v) => (
-          <LiftCard key={v.id} className="card h-full overflow-hidden">
+          <TiltCard key={v.id} className="card h-full overflow-hidden">
             <Link href={`/vendors/${v.slug}`}>
               <div className="h-40 overflow-hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -98,7 +99,7 @@ export default async function VendorsPage({
                 </div>
               </div>
             </Link>
-          </LiftCard>
+          </TiltCard>
         ))}
         {vendors.length === 0 && (
           <p className="text-[rgb(var(--foreground))]/50">No vendors found.</p>

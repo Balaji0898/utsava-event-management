@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { serverApi, CACHE_TAGS } from '@/shared/lib/api';
 import { Reveal } from '@/shared/motion/primitives';
+import { TiltCard } from '@/shared/motion/tilt-card';
 import { BackButton } from '@/shared/ui/back-button';
 import { formatCurrency } from '@/shared/lib/utils';
 import { Star, ShieldCheck, MapPin, Phone, Check } from 'lucide-react';
@@ -103,7 +104,7 @@ export default async function VendorDetail({ params }: { params: { slug: string 
       <h2 className="mt-14 text-2xl font-bold">Packages</h2>
       <div className="mt-6 grid gap-6 md:grid-cols-3">
         {vendor.packages.map((p) => (
-          <div
+          <TiltCard
             key={p.id}
             className={`card relative p-6 ${
               p.popular ? 'ring-2 ring-brand-500' : ''
@@ -131,7 +132,7 @@ export default async function VendorDetail({ params }: { params: { slug: string 
             >
               Book this package
             </Link>
-          </div>
+          </TiltCard>
         ))}
       </div>
 

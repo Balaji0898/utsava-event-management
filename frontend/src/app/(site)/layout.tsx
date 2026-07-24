@@ -7,8 +7,12 @@ import { SiteContactProvider } from '@/shared/config/site-contact-context';
 import type { SiteContact } from '@/shared/config/site';
 
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
+  // Short budget so a cold backend can't keep the site shell blank on first
+  // paint — falls back to default contact and warms from cache on later loads.
   const contact = await serverApi<Partial<SiteContact>>('/cms/contact', {
     tags: [CACHE_TAGS.cms],
+    timeoutMs: 2500,
+    retries: 0,
   });
 
   return (

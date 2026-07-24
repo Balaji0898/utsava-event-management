@@ -1,14 +1,26 @@
 'use client';
 
-import { motion, useInView, type Variants } from 'framer-motion';
+import { motion, useInView, useReducedMotion, type Variants } from 'framer-motion';
 import { useRef, type ReactNode } from 'react';
 
-const fadeUp: Variants = {
-  hidden: { opacity: 0, y: 24 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
+// Anti-gravity "rise": content levitates up + settles into scale as it enters.
+const rise: Variants = {
+  hidden: { opacity: 0, y: 32, scale: 0.96 },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+  },
 };
 
-/** Fades + slides content in when it scrolls into view. */
+// Reduced-motion: fade only, no transform.
+const fade: Variants = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { duration: 0.3 } },
+};
+
+/** Fades + rises content in when it scrolls into view. */
 export function Reveal({
   children,
   delay = 0,
@@ -18,12 +30,13 @@ export function Reveal({
   delay?: number;
   className?: string;
 }) {
+  const reduce = useReducedMotion();
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: '-80px' });
   return (
     <motion.div
       ref={ref}
-      variants={fadeUp}
+      variants={reduce ? fade : rise}
       initial="hidden"
       animate={inView ? 'show' : 'hidden'}
       transition={{ delay }}
@@ -34,7 +47,7 @@ export function Reveal({
   );
 }
 
-/** Staggers its direct children on scroll into view. */
+/** Staggers its direct children (StaggerItem) on scroll into view. */
 export function Stagger({
   children,
   className,
@@ -66,14 +79,15 @@ export function StaggerItem({
   children: ReactNode;
   className?: string;
 }) {
+  const reduce = useReducedMotion();
   return (
-    <motion.div variants={fadeUp} className={className}>
+    <motion.div variants={reduce ? fade : rise} className={className}>
       {children}
     </motion.div>
   );
 }
 
-/** Card that lifts on hover. */
+/** Card that lifts toward the viewer with a gold glow on hover. */
 export function LiftCard({
   children,
   className,
@@ -81,9 +95,11 @@ export function LiftCard({
   children: ReactNode;
   className?: string;
 }) {
+  const reduce = useReducedMotion();
+  if (reduce) return <div className={className}>{children}</div>;
   return (
     <motion.div
-      whileHover={{ y: -6, scale: 1.01 }}
+      whileHover={{ y: -6, scale: 1.01, boxShadow: '0 30px 60px -24px rgba(212,175,55,0.55)' }}
       transition={{ type: 'spring', stiffness: 300, damping: 20 }}
       className={className}
     >

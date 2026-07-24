@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { serverApi, CACHE_TAGS } from '@/shared/lib/api';
-import { Reveal, LiftCard } from '@/shared/motion/primitives';
+import { Reveal } from '@/shared/motion/primitives';
+import { TiltCard } from '@/shared/motion/tilt-card';
 import { BackButton } from '@/shared/ui/back-button';
 import { T } from '@/shared/i18n';
 import { formatCurrency } from '@/shared/lib/utils';
@@ -41,7 +42,7 @@ export default async function PackagesPage() {
 
       <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {packages.map((p) => (
-          <LiftCard
+          <TiltCard
             key={p.id}
             className={`card h-full p-6 ${p.popular ? 'ring-2 ring-brand-500' : ''}`}
           >
@@ -62,7 +63,7 @@ export default async function PackagesPage() {
             >
               <T k="packagesPage.bookNow" />
             </Link>
-          </LiftCard>
+          </TiltCard>
         ))}
         {packages.length === 0 && (
           <p className="text-[rgb(var(--foreground))]/50">No packages yet.</p>
