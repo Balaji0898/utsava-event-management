@@ -69,13 +69,14 @@ export default async function VendorsPage({
         {vendors.map((v) => (
           <TiltCard key={v.id} className="card h-full overflow-hidden">
             <Link href={`/vendors/${v.slug}`}>
-              <div className="h-40 overflow-hidden">
+              <div className="relative h-40 overflow-hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={v.coverImage ?? ''}
                   alt={v.name}
                   className="h-full w-full object-cover"
                 />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
               </div>
               <div className="p-5">
                 <div className="flex items-center justify-between">

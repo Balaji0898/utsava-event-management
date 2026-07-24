@@ -49,7 +49,11 @@ export default function LoginPage() {
     'mt-1 w-full rounded-xl border bg-[rgb(var(--card))] px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500';
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-hero-gradient px-4 pt-28 hex-pattern">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-hero-gradient px-4 pt-28">
+      {/* Hex pattern as an overlay so it layers over the gradient instead of
+         replacing it (the unlayered .hex-pattern rule would otherwise win over
+         the bg-hero-gradient utility). */}
+      <div className="hex-pattern pointer-events-none absolute inset-0" aria-hidden />
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}

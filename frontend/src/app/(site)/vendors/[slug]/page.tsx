@@ -50,7 +50,7 @@ export default async function VendorDetail({ params }: { params: { slug: string 
               alt={vendor.name}
               className="h-full w-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
           </div>
           <div className="p-8">
             <span className="text-sm font-medium text-accent">
@@ -88,13 +88,14 @@ export default async function VendorDetail({ params }: { params: { slug: string 
           <h2 className="mt-14 text-2xl font-bold">Gallery</h2>
           <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3">
             {vendor.gallery.map((g, i) => (
-              <div key={i} className="card overflow-hidden">
+              <div key={i} className="card relative h-48 overflow-hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={g}
                   alt={`${vendor.name} ${i + 1}`}
-                  className="h-48 w-full object-cover transition-transform duration-500 hover:scale-105"
+                  className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
                 />
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
               </div>
             ))}
           </div>

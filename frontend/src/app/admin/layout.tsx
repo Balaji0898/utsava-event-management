@@ -48,14 +48,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (!ready) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-hero-gradient hex-pattern">
+      <div className="relative flex min-h-screen flex-col items-center justify-center gap-4 overflow-hidden bg-hero-gradient">
+        {/* Hex pattern as an overlay so it layers over the gradient instead of
+           replacing it (the unlayered .hex-pattern rule would otherwise win
+           over the bg-hero-gradient utility). */}
+        <div className="hex-pattern pointer-events-none absolute inset-0" aria-hidden />
         <div className="relative h-16 w-16">
           <span className="absolute inset-0 animate-spin rounded-full border-4 border-brand-200 border-t-brand-500" />
           <span className="absolute inset-0 flex items-center justify-center font-display text-xl font-bold gold-text">
             U
           </span>
         </div>
-        <p className="font-display text-sm tracking-wide text-[rgb(var(--foreground))]/60">
+        <p className="relative font-display text-sm tracking-wide text-[rgb(var(--foreground))]/60">
           Loading Utsava dashboard…
         </p>
       </div>
