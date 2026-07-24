@@ -44,14 +44,14 @@ export function Footer() {
             <div className="font-display text-base font-semibold text-[rgb(var(--foreground))]">
               {contact.manager}
             </div>
-            <div className="text-xs text-brand-600 dark:text-brand-400">{contact.role}</div>
-            <a href={telHref(contact.phone)} className="mt-3 flex items-center gap-2 hover:text-brand-500">
+            <div className="text-xs text-accent">{contact.role}</div>
+            <a href={telHref(contact.phone)} className="mt-3 flex items-center gap-2 hover:text-[rgb(var(--accent))]">
               <Phone size={15} /> {contact.phoneDisplay}
             </a>
-            <a href={whatsappHref(contact.whatsapp)} target="_blank" className="mt-2 flex items-center gap-2 hover:text-brand-500">
+            <a href={whatsappHref(contact.whatsapp)} target="_blank" className="mt-2 flex items-center gap-2 hover:text-[rgb(var(--accent))]">
               <MessageCircle size={15} /> WhatsApp
             </a>
-            <a href={mailHref(contact.email)} className="mt-2 flex items-center gap-2 hover:text-brand-500">
+            <a href={mailHref(contact.email)} className="mt-2 flex items-center gap-2 hover:text-[rgb(var(--accent))]">
               <Mail size={15} /> {contact.email}
             </a>
             <div className="mt-2 flex items-center gap-2">
@@ -74,7 +74,7 @@ function FooterCol({ title, links }: { title: string; links: [string, string][] 
       <ul className="space-y-2 text-sm text-[rgb(var(--foreground))]/60">
         {links.map(([label, href]) => (
           <li key={href}>
-            <Link href={href} className="hover:text-brand-500">
+            <Link href={href} className="hover:text-[rgb(var(--accent))]">
               {label}
             </Link>
           </li>

@@ -79,7 +79,7 @@ export default async function VendorsPage({
               </div>
               <div className="p-5">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-brand-500">
+                  <span className="text-xs font-medium text-accent">
                     {v.department?.name}
                   </span>
                   <span className="flex items-center gap-1 text-xs">
@@ -89,7 +89,7 @@ export default async function VendorsPage({
                 </div>
                 <h3 className="mt-2 flex items-center gap-1 text-lg font-semibold">
                   {v.name}
-                  {v.verified && <ShieldCheck size={16} className="text-brand-500" />}
+                  {v.verified && <ShieldCheck size={16} className="text-accent" />}
                 </h3>
                 <p className="mt-1 line-clamp-2 text-sm text-[rgb(var(--foreground))]/60">
                   {v.description}

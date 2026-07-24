@@ -99,7 +99,7 @@ export function LiftCard({
   if (reduce) return <div className={className}>{children}</div>;
   return (
     <motion.div
-      whileHover={{ y: -6, scale: 1.01, boxShadow: '0 30px 60px -24px rgba(212,175,55,0.55)' }}
+      whileHover={{ y: -6, scale: 1.01, boxShadow: 'var(--shadow-card-hover)' }}
       transition={{ type: 'spring', stiffness: 300, damping: 20 }}
       className={className}
     >

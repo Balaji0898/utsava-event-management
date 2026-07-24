@@ -66,7 +66,7 @@ export function TiltCard({
         onMouseMove={onMove}
         onMouseLeave={onLeave}
         style={{ rotateX, rotateY, transformStyle: 'preserve-3d' }}
-        whileHover={{ scale: 1.02, y: -6, z: 30, boxShadow: '0 30px 60px -24px rgba(212,175,55,0.6)' }}
+        whileHover={{ scale: 1.02, y: -6, z: 30, boxShadow: 'var(--shadow-card-hover)' }}
         transition={{ type: 'spring', stiffness: 300, damping: 25 }}
         className={`group relative ${className ?? ''}`}
       >

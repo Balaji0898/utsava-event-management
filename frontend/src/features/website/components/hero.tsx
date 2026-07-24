@@ -42,7 +42,7 @@ export function Hero() {
           </div>
 
           {/* Content (natural flow — never overlaps) */}
-          <div className="relative flex flex-col p-6 sm:p-10 lg:min-h-[560px] lg:p-16">
+          <div className="relative flex flex-col p-6 sm:p-10 lg:min-h-[560px] lg:justify-center lg:p-16">
             <motion.span
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -98,7 +98,7 @@ export function Hero() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.4 }}
-              className="mt-8 flex flex-col gap-2 rounded-3xl bg-white/95 p-3 shadow-luxe backdrop-blur dark:bg-[#181410] sm:mt-10 lg:mt-auto lg:max-w-4xl lg:flex-row lg:items-center lg:gap-1"
+              className="mt-8 flex flex-col gap-2 rounded-3xl bg-white/95 p-3 shadow-luxe backdrop-blur dark:bg-[#181410] sm:mt-10 lg:mt-12 lg:max-w-4xl lg:flex-row lg:items-center lg:gap-1"
             >
               <Field icon={<MapPin size={18} />} label={t('hero.place')}>
                 <input

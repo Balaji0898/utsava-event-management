@@ -70,7 +70,7 @@ export function Testimonials({ items }: { items: Testimonial[] }) {
         <h2 className="text-3xl font-bold">{t('testimonials.title')}</h2>
         <Link
           href="/testimonials"
-          className="inline-flex items-center gap-1 text-sm font-medium text-brand-500"
+          className="inline-flex items-center gap-1 text-sm font-medium text-accent"
         >
           {t('testimonials.seeAll')} <ArrowUpRight size={15} />
         </Link>

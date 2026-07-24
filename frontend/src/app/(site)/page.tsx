@@ -86,7 +86,7 @@ export default function HomePage() {
                 <T k="bestEvents.subtitle" />
               </p>
             </div>
-            <Link href="/vendors" className="text-sm font-medium text-brand-500">
+            <Link href="/vendors" className="text-sm font-medium text-accent">
               <T k="featured.viewAll" /> →
             </Link>
           </div>
@@ -109,20 +109,22 @@ export default function HomePage() {
         </Suspense>
       </section>
 
-      {/* Services / departments */}
-      <section id="services" className="container-page py-20">
-        <Reveal>
-          <h2 className="text-3xl font-bold">
-            <T k="services.title" />
-          </h2>
-          <p className="mt-2 text-[rgb(var(--foreground))]/60">
-            <T k="services.subtitle" />
-          </p>
-        </Reveal>
-        <Suspense fallback={<div className="mt-10"><VendorGridSkeleton count={6} /></div>}>
-          <ServicesGrid />
-        </Suspense>
-      </section>
+      {/* Services / departments — tonal band for section rhythm */}
+      <div className="mt-6 border-y bg-[rgb(var(--muted))]/60">
+        <section id="services" className="container-page py-20">
+          <Reveal>
+            <h2 className="text-3xl font-bold">
+              <T k="services.title" />
+            </h2>
+            <p className="mt-2 text-[rgb(var(--foreground))]/60">
+              <T k="services.subtitle" />
+            </p>
+          </Reveal>
+          <Suspense fallback={<div className="mt-10"><VendorGridSkeleton count={6} /></div>}>
+            <ServicesGrid />
+          </Suspense>
+        </section>
+      </div>
 
       {/* Function Halls & Venues */}
       <Suspense fallback={null}>
@@ -175,7 +177,7 @@ function StatsGrid({ items }: { items: StatItem[] }) {
       {items.map((s, i) => (
         <StaggerItem key={`${s.label}-${i}`}>
           <div className="card p-6 text-center">
-            <div className="text-3xl font-extrabold text-brand-500">
+            <div className="text-3xl font-extrabold text-accent">
               <AnimatedCounter to={s.value} suffix={s.suffix ?? ''} />
             </div>
             <div className="mt-1 text-sm text-[rgb(var(--foreground))]/60">{s.label}</div>
@@ -219,7 +221,7 @@ async function ServicesGrid() {
                 <p className="text-sm text-[rgb(var(--foreground))]/60">
                   {d.description ?? <T k="services.explore" />}
                 </p>
-                <div className="mt-4 text-sm font-medium text-brand-500">
+                <div className="mt-4 text-sm font-medium text-accent">
                   {d._count?.vendors ?? 0} <T k="services.vendorsSuffix" /> →
                 </div>
               </div>

@@ -53,12 +53,12 @@ export default async function VendorDetail({ params }: { params: { slug: string 
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
           </div>
           <div className="p-8">
-            <span className="text-sm font-medium text-brand-500">
+            <span className="text-sm font-medium text-accent">
               {vendor.department?.name}
             </span>
             <h1 className="mt-1 flex items-center gap-2 text-3xl font-bold">
               {vendor.name}
-              {vendor.verified && <ShieldCheck className="text-brand-500" />}
+              {vendor.verified && <ShieldCheck className="text-accent" />}
             </h1>
             <div className="mt-3 flex flex-wrap gap-4 text-sm text-[rgb(var(--foreground))]/70">
               <span className="flex items-center gap-1">
@@ -122,7 +122,7 @@ export default async function VendorDetail({ params }: { params: { slug: string 
             <ul className="mt-4 space-y-2 text-sm">
               {p.features.map((f) => (
                 <li key={f} className="flex items-center gap-2">
-                  <Check size={16} className="text-brand-500" /> {f}
+                  <Check size={16} className="text-accent" /> {f}
                 </li>
               ))}
             </ul>

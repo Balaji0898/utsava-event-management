@@ -53,7 +53,7 @@ export default async function PackagesPage() {
             <ul className="mt-4 space-y-2 text-sm">
               {p.features.map((f) => (
                 <li key={f} className="flex items-center gap-2">
-                  <Check size={16} className="text-brand-500" /> {f}
+                  <Check size={16} className="text-accent" /> {f}
                 </li>
               ))}
             </ul>
