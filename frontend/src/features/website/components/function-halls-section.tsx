@@ -45,12 +45,18 @@ export function FunctionHallsSection({
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="relative flex flex-col overflow-hidden rounded-[2.5rem] border bg-ink p-8 text-white hex-pattern"
+          className="relative flex flex-col overflow-hidden rounded-[2.5rem] border bg-ink p-8 text-white"
         >
-          <div className="pointer-events-none mx-auto h-48 w-48">
+          {/* Hex pattern as an overlay child so it decorates the ink panel
+             instead of clobbering its background-color (the unlayered
+             .hex-pattern rule sets background:transparent and would otherwise
+             win over the layered bg-ink utility, hiding the white text in
+             light mode). */}
+          <div className="hex-pattern pointer-events-none absolute inset-0" aria-hidden />
+          <div className="relative pointer-events-none mx-auto h-48 w-48">
             <Hero3D />
           </div>
-          <div className="mt-auto">
+          <div className="relative mt-auto">
             <span className="text-3xl">🏛️</span>
             <h2 className="mt-2 font-display text-3xl font-bold">Function Halls &amp; Venues</h2>
             <p className="mt-2 text-sm text-white/70">
