@@ -71,11 +71,11 @@ export function Testimonials({ items }: { items: Testimonial[] }) {
 
   return (
     <section className="container-page py-16">
-      <div className="flex items-end justify-between">
+      <div className="flex items-end justify-between gap-4">
         <h2 className="text-3xl font-bold">{t('testimonials.title')}</h2>
         <Link
           href="/testimonials"
-          className="inline-flex items-center gap-1 text-sm font-medium text-accent"
+          className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-sm font-medium text-accent"
         >
           {t('testimonials.seeAll')} <ArrowUpRight size={15} />
         </Link>

@@ -78,7 +78,7 @@ export default function HomePage() {
       {/* Best Events — cinematic auto-play showcase, right under the hero */}
       <section className="container-page pt-6 pb-12">
         <Reveal>
-          <div className="flex items-end justify-between">
+          <div className="flex items-end justify-between gap-4">
             <div>
               <h2 className="text-3xl font-bold">
                 <T k="bestEvents.title" />
@@ -87,7 +87,10 @@ export default function HomePage() {
                 <T k="bestEvents.subtitle" />
               </p>
             </div>
-            <Link href="/vendors" className="text-sm font-medium text-accent">
+            <Link
+              href="/vendors"
+              className="shrink-0 whitespace-nowrap text-sm font-medium text-accent"
+            >
               <T k="featured.viewAll" /> →
             </Link>
           </div>
@@ -176,8 +179,8 @@ function StatsGrid({ items }: { items: StatItem[] }) {
   return (
     <Stagger className="grid grid-cols-2 gap-4 md:grid-cols-4">
       {items.map((s, i) => (
-        <StaggerItem key={`${s.label}-${i}`}>
-          <div className="card p-6 text-center">
+        <StaggerItem key={`${s.label}-${i}`} className="h-full">
+          <div className="card flex h-full flex-col items-center justify-center p-6 text-center">
             <div className="text-3xl font-extrabold text-accent">
               <AnimatedCounter to={s.value} suffix={s.suffix ?? ''} />
             </div>
