@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+import { Suspense, cache } from 'react';
 import Link from 'next/link';
 import { serverApi, CACHE_TAGS } from '@/shared/lib/api';
 import { Hero } from '@/features/website/components/hero';
@@ -29,6 +29,12 @@ type Department = {
   description?: string;
   _count?: { vendors: number };
 };
+
+// Deduped per-request: ServicesGrid, BestEventsSection and HallsSection all
+// need departments — React cache() coalesces them into a single fetch.
+const getDepartments = cache(() =>
+  serverApi<Department[]>('/departments', { tags: [CACHE_TAGS.departments] }),
+);
 
 type Vendor = {
   id: string;
@@ -202,7 +208,7 @@ async function StatsSection() {
 
 async function ServicesGrid() {
   const departments =
-    (await serverApi<Department[]>('/departments', { tags: [CACHE_TAGS.departments] })) ?? [];
+    (await getDepartments()) ?? [];
 
   return (
     <Stagger className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -243,7 +249,7 @@ async function ServicesGrid() {
 
 async function BestEventsSection() {
   const [departments, featuredRes] = await Promise.all([
-    serverApi<Department[]>('/departments', { tags: [CACHE_TAGS.departments] }),
+    getDepartments(),
     serverApi<{ data: Vendor[] }>('/vendors?featured=true&limit=50', {
       tags: [CACHE_TAGS.vendors],
     }),
@@ -278,7 +284,7 @@ async function BestEventsSection() {
 
 async function HallsSection() {
   const departments =
-    (await serverApi<Department[]>('/departments', { tags: [CACHE_TAGS.departments] })) ?? [];
+    (await getDepartments()) ?? [];
   const fhDept = departments.find((d) => d.slug === 'function-halls');
   if (!fhDept) return null;
   const hallsRes = await serverApi<{ data: Hall[] }>(

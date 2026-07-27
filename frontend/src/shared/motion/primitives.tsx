@@ -86,24 +86,3 @@ export function StaggerItem({
     </motion.div>
   );
 }
-
-/** Card that lifts toward the viewer with a gold glow on hover. */
-export function LiftCard({
-  children,
-  className,
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
-  const reduce = useReducedMotion();
-  if (reduce) return <div className={className}>{children}</div>;
-  return (
-    <motion.div
-      whileHover={{ y: -6, scale: 1.01, boxShadow: 'var(--shadow-card-hover)' }}
-      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-      className={className}
-    >
-      {children}
-    </motion.div>
-  );
-}

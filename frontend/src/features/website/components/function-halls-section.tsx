@@ -59,16 +59,20 @@ export function FunctionHallsSection({
           </div>
           <div className="relative mt-auto">
             <span className="text-3xl">🏛️</span>
-            <h2 className="mt-2 font-display text-3xl font-bold">Function Halls &amp; Venues</h2>
+            <h2 className="mt-2 font-display text-3xl font-bold">
+              <Tr>Function Halls &amp; Venues</Tr>
+            </h2>
             <p className="mt-2 text-sm text-white/70">
-              Banquet halls, convention centres and lawns for every celebration — with
-              transparent per-day price ranges.
+              <Tr>
+                Banquet halls, convention centres and lawns for every celebration — with
+                transparent per-day price ranges.
+              </Tr>
             </p>
             <Link
               href={deptId ? `/vendors?departmentId=${deptId}` : '/vendors'}
               className="btn-primary mt-6"
             >
-              View all venues <ArrowUpRight size={16} className="ml-1.5" />
+              <Tr>View all venues</Tr> <ArrowUpRight size={16} className="ml-1.5" />
             </Link>
           </div>
         </motion.div>
@@ -98,12 +102,12 @@ export function FunctionHallsSection({
                       )}
                       {cap && (
                         <span className="flex items-center gap-1">
-                          <Users size={13} /> {cap}
+                          <Users size={13} /> <Tr>{cap}</Tr>
                         </span>
                       )}
                     </div>
                     <div className="mt-4 text-sm">
-                      <span className="text-[rgb(var(--foreground))]/60">Per day: </span>
+                      <span className="text-[rgb(var(--foreground))]/60"><Tr>Per day</Tr>: </span>
                       <span className="font-bold">
                         {formatCurrency(Number(h.priceFrom))} – {formatCurrency(Number(h.priceTo))}
                       </span>

@@ -60,9 +60,11 @@ export default async function VendorsPage({
         <BackButton fallback="/" label="Back to home" />
       </div>
       <Reveal>
-        <h1 className="text-4xl font-bold">Vendors</h1>
+        <h1 className="text-4xl font-bold">
+          <Tr>Vendors</Tr>
+        </h1>
         <p className="mt-2 text-[rgb(var(--foreground))]/60">
-          {res?.total ?? 0} vendors available. Filter by department from the home page.
+          <Tr>{`${res?.total ?? 0} vendors available. Filter by department from the home page.`}</Tr>
         </p>
       </Reveal>
 
@@ -104,7 +106,9 @@ export default async function VendorsPage({
           </TiltCard>
         ))}
         {vendors.length === 0 && (
-          <p className="text-[rgb(var(--foreground))]/50">No vendors found.</p>
+          <p className="text-[rgb(var(--foreground))]/50">
+            <Tr>No vendors found.</Tr>
+          </p>
         )}
       </div>
 

@@ -21,15 +21,28 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
     };
     raf = requestAnimationFrame(loop);
 
+    // Track pending timers so they can be cancelled on unmount (no work against
+    // a destroyed Lenis, no dangling retry loops).
+    let cancelled = false;
+    const timers = new Set<ReturnType<typeof setTimeout>>();
+    const later = (fn: () => void, ms: number) => {
+      const id = setTimeout(() => {
+        timers.delete(id);
+        if (!cancelled) fn();
+      }, ms);
+      timers.add(id);
+    };
+
     // Scroll to an id via Lenis, retrying while streamed sections mount.
     const scrollToId = (id: string) => {
       let tries = 0;
       const tick = () => {
+        if (cancelled) return;
         const el = document.getElementById(id);
         if (el) {
           lenis.scrollTo(el, { offset: NAV_OFFSET });
         } else if (tries++ < 25) {
-          setTimeout(tick, 150);
+          later(tick, 150);
         }
       };
       tick();
@@ -56,14 +69,14 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
         if (typeof history !== 'undefined') history.replaceState(null, '', href);
       } else {
         // Different page or streamed section — allow the navigation, then scroll.
-        setTimeout(() => scrollToId(id), 250);
+        later(() => scrollToId(id), 250);
       }
     };
     document.addEventListener('click', onClick);
 
     // Deep-link / reload with a hash already in the URL.
     if (window.location.hash.length > 1) {
-      setTimeout(() => scrollToId(window.location.hash.slice(1)), 300);
+      later(() => scrollToId(window.location.hash.slice(1)), 300);
     }
     const onHashChange = () => {
       if (window.location.hash.length > 1) scrollToId(window.location.hash.slice(1));
@@ -71,6 +84,8 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
     window.addEventListener('hashchange', onHashChange);
 
     return () => {
+      cancelled = true;
+      timers.forEach(clearTimeout);
       cancelAnimationFrame(raf);
       document.removeEventListener('click', onClick);
       window.removeEventListener('hashchange', onHashChange);

@@ -143,7 +143,7 @@ export function BestEventsSlider({ slides }: { slides: BestEventSlide[] }) {
                     transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
                     className="inline-flex items-center gap-1 rounded-full bg-gold-gradient px-3 py-1 text-xs font-semibold text-ink shadow-gold"
                   >
-                    <Award size={12} /> Best Event
+                    <Award size={12} /> <Tr>Best Event</Tr>
                   </motion.span>
                 )}
                 <div className="mt-3 text-sm font-medium text-brand-200">
@@ -159,7 +159,7 @@ export function BestEventsSlider({ slides }: { slides: BestEventSlide[] }) {
                 )}
                 <div className="mt-5 flex flex-wrap items-center gap-4">
                   <Link href={s.href} className="btn-primary">
-                    Explore <ArrowUpRight size={16} className="ml-1.5" />
+                    <Tr>Explore</Tr> <ArrowUpRight size={16} className="ml-1.5" />
                   </Link>
                   {typeof s.priceFrom === 'number' && s.priceFrom > 0 && (
                     <span className="text-sm text-white/80">

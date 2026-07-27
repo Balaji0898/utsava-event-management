@@ -153,52 +153,9 @@ html[data-launched] #launch-overlay {
   align-items: center;
   text-align: center;
 }
-.launch-monogram {
-  position: relative;
-  display: flex;
-  height: 104px;
-  width: 104px;
-  align-items: center;
-  justify-content: center;
-}
-.launch-halo {
-  position: absolute;
-  inset: 0;
-  border-radius: 9999px;
-  background: rgba(212, 175, 55, 0.25);
-  filter: blur(32px);
-  animation: launch-pulse 2.6s ease-in-out infinite;
-}
-.launch-ring-track {
-  position: absolute;
-  inset: 4px;
-  border-radius: 9999px;
-  border: 1px solid rgba(212, 175, 55, 0.15);
-}
-.launch-ring {
-  position: absolute;
-  inset: 4px;
-  border-radius: 9999px;
-  border: 2px solid transparent;
-  border-top-color: #d4af37;
-  border-right-color: rgba(227, 200, 119, 0.7);
-  animation: launch-spin 1.1s linear infinite;
-}
-.launch-tile {
-  position: relative;
-  display: flex;
-  height: 68px;
-  width: 68px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 1.35rem;
-  background: linear-gradient(135deg, #e3c877 0%, #d4af37 45%, #a9861f 100%);
-  box-shadow: 0 10px 40px -10px rgba(212, 175, 55, 0.55);
-  animation: launch-pulse 2.6s ease-in-out infinite;
-}
 .launch-wordmark {
   margin-top: 2rem;
-  font-family: var(--font-display);
+  font-family: var(--font-brand, 'Cinzel', Georgia, serif);
   font-size: 2rem;
   font-weight: 700;
   line-height: 1;
@@ -234,22 +191,6 @@ html[data-launched] #launch-overlay {
   animation: launch-progress 1.4s ease-in-out infinite;
 }
 
-@keyframes launch-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-@keyframes launch-pulse {
-  0%,
-  100% {
-    transform: scale(0.95);
-    opacity: 0.85;
-  }
-  50% {
-    transform: scale(1.06);
-    opacity: 1;
-  }
-}
 @keyframes launch-progress {
   0% {
     transform: translateX(-120%);
@@ -336,10 +277,6 @@ html[data-launched] #launch-overlay {
     opacity: 1;
     transform: scale(1.15);
   }
-}
-/* Cinzel brand wordmark shimmer on the launch splash */
-.launch-wordmark {
-  font-family: var(--font-brand, 'Cinzel', Georgia, serif);
 }
 
 /* Accessibility: honor the OS "reduce motion" setting — neutralize the

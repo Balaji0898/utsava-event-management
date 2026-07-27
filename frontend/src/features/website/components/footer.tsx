@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 import { Phone, MessageCircle, Mail, MapPin } from 'lucide-react';
 import { useI18n } from '@/shared/i18n';
 import { Logo } from '@/shared/ui/logo';
@@ -31,10 +32,10 @@ export function Footer() {
           title={t('footer.company')}
           links={[
             [t('nav.services'), '/#services'],
-            ['Testimonials', '/testimonials'],
-            ['FAQ', '/#faq'],
-            ['Privacy', '/privacy'],
-            ['Terms', '/terms'],
+            [<Tr key="t">Testimonials</Tr>, '/testimonials'],
+            [<Tr key="f">FAQ</Tr>, '/#faq'],
+            [<Tr key="p">Privacy</Tr>, '/privacy'],
+            [<Tr key="tm">Terms</Tr>, '/terms'],
           ]}
         />
 
@@ -52,13 +53,13 @@ export function Footer() {
               <Phone size={15} /> {contact.phoneDisplay}
             </a>
             <a href={whatsappHref(contact.whatsapp)} target="_blank" className="mt-2 flex items-center gap-2 hover:text-[rgb(var(--accent))]">
-              <MessageCircle size={15} /> WhatsApp
+              <MessageCircle size={15} /> <Tr>WhatsApp</Tr>
             </a>
             <a href={mailHref(contact.email)} className="mt-2 flex items-center gap-2 hover:text-[rgb(var(--accent))]">
               <Mail size={15} /> {contact.email}
             </a>
             <div className="mt-2 flex items-center gap-2">
-              <MapPin size={15} /> Bengaluru · Hyderabad · Chennai
+              <MapPin size={15} /> <Tr>Bengaluru · Hyderabad · Chennai</Tr>
             </div>
           </div>
         </div>
@@ -70,7 +71,7 @@ export function Footer() {
   );
 }
 
-function FooterCol({ title, links }: { title: string; links: [string, string][] }) {
+function FooterCol({ title, links }: { title: string; links: [ReactNode, string][] }) {
   return (
     <div>
       <h4 className="mb-3 text-sm font-semibold">{title}</h4>

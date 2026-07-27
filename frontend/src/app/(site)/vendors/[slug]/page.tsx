@@ -87,12 +87,16 @@ export default async function VendorDetail({ params }: { params: { slug: string 
 
       {vendor.gallery && vendor.gallery.length > 0 && (
         <>
-          <h2 className="mt-14 text-2xl font-bold">Gallery</h2>
+          <h2 className="mt-14 text-2xl font-bold">
+            <Tr>Gallery</Tr>
+          </h2>
           <Gallery images={vendor.gallery} name={vendor.name} />
         </>
       )}
 
-      <h2 className="mt-14 text-2xl font-bold">Packages</h2>
+      <h2 className="mt-14 text-2xl font-bold">
+        <Tr>Packages</Tr>
+      </h2>
       <div className="mt-6 grid gap-6 md:grid-cols-3">
         {vendor.packages.map((p) => (
           <TiltCard
@@ -103,7 +107,7 @@ export default async function VendorDetail({ params }: { params: { slug: string 
           >
             {p.popular && (
               <span className="absolute -top-3 left-6 rounded-full bg-brand-600 px-3 py-1 text-xs font-semibold text-white">
-                Most popular
+                <Tr>Most popular</Tr>
               </span>
             )}
             <h3 className="text-lg font-semibold">
@@ -123,7 +127,7 @@ export default async function VendorDetail({ params }: { params: { slug: string 
               href={`/book?vendorId=${vendor.id}&packageId=${p.id}`}
               className="btn-primary mt-auto w-full"
             >
-              Book this package
+              <Tr>Book this package</Tr>
             </Link>
           </TiltCard>
         ))}
@@ -131,7 +135,9 @@ export default async function VendorDetail({ params }: { params: { slug: string 
 
       {vendor.reviews.length > 0 && (
         <>
-          <h2 className="mt-14 text-2xl font-bold">Reviews</h2>
+          <h2 className="mt-14 text-2xl font-bold">
+            <Tr>Reviews</Tr>
+          </h2>
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             {vendor.reviews.map((r) => (
               <div key={r.id} className="card p-5">
@@ -144,7 +150,7 @@ export default async function VendorDetail({ params }: { params: { slug: string 
                   <Tr>{r.comment}</Tr>
                 </p>
                 <p className="mt-2 text-xs text-[rgb(var(--foreground))]/50">
-                  — {r.authorName ?? 'Customer'}
+                  — {r.authorName ?? <Tr>Customer</Tr>}
                 </p>
               </div>
             ))}
