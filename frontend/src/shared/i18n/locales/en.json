@@ -18,6 +18,7 @@
     "ctaSecondary": "Explore our work",
     "place": "Place",
     "dateFrom": "Date From",
+    "datePlaceholder": "Select date",
     "dateTo": "Date To",
     "event": "Event",
     "searchPlaceholderPlace": "City",
@@ -115,6 +116,7 @@
     "submit": "Submit review",
     "sending": "Submitting…",
     "thanksTitle": "Thank you!",
-    "thanksBody": "Your review has been submitted and will appear once approved."
+    "thanksBody": "Your review has been submitted and will appear once approved.",
+    "ratingRequired": "Please select a star rating."
   }
 }

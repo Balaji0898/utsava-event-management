@@ -124,8 +124,9 @@ export function BestEventsSlider({ slides }: { slides: BestEventSlide[] }) {
             </motion.div>
           </AnimatePresence>
 
-          {/* Slide content */}
-          <div className="absolute inset-0 flex items-end p-6 sm:p-10 lg:p-14">
+          {/* Slide content + controls — stacked & bottom-anchored so the nav
+              arrows/dots sit BELOW the text and never overlap it (mobile-safe). */}
+          <div className="absolute inset-0 flex flex-col justify-end p-6 pb-8 sm:p-10 lg:p-14">
             <AnimatePresence mode="wait">
               <motion.div
                 key={index}
@@ -147,7 +148,7 @@ export function BestEventsSlider({ slides }: { slides: BestEventSlide[] }) {
                 <div className="mt-3 text-sm font-medium text-brand-200">
                   {s.icon} {s.category}
                 </div>
-                <h3 className="mt-1 font-display text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl">
+                <h3 className="mt-1 font-display text-2xl font-bold leading-tight sm:text-4xl lg:text-5xl">
                   {s.title}
                 </h3>
                 {s.description && (
@@ -155,7 +156,7 @@ export function BestEventsSlider({ slides }: { slides: BestEventSlide[] }) {
                     {s.description}
                   </p>
                 )}
-                <div className="mt-6 flex flex-wrap items-center gap-4">
+                <div className="mt-5 flex flex-wrap items-center gap-4">
                   <Link href={s.href} className="btn-primary">
                     Explore <ArrowUpRight size={16} className="ml-1.5" />
                   </Link>
@@ -167,46 +168,45 @@ export function BestEventsSlider({ slides }: { slides: BestEventSlide[] }) {
                 </div>
               </motion.div>
             </AnimatePresence>
+
+            {/* Controls row — dots (left) + prev/next arrows (right); sits below
+                the text so it never overlaps the badge/title. */}
+            {count > 1 && (
+              <div className="mt-6 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                  {slides.map((_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      aria-label={`Go to slide ${i + 1}`}
+                      onClick={() => go(i, i > index ? 1 : -1)}
+                      className={`h-2 rounded-full transition-all ${
+                        i === index ? 'w-6 bg-brand-400' : 'w-2 bg-white/50 hover:bg-white/80'
+                      }`}
+                    />
+                  ))}
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    aria-label="Previous"
+                    onClick={() => go(index - 1, -1)}
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur transition hover:bg-white/30"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Next"
+                    onClick={() => go(index + 1, 1)}
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur transition hover:bg-white/30"
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-
-          {/* Arrows */}
-          {count > 1 && (
-            <>
-              <button
-                type="button"
-                aria-label="Previous"
-                onClick={() => go(index - 1, -1)}
-                className="absolute left-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur transition hover:bg-white/30"
-              >
-                <ChevronLeft size={20} />
-              </button>
-              <button
-                type="button"
-                aria-label="Next"
-                onClick={() => go(index + 1, 1)}
-                className="absolute right-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur transition hover:bg-white/30"
-              >
-                <ChevronRight size={20} />
-              </button>
-            </>
-          )}
-
-          {/* Dots */}
-          {count > 1 && (
-            <div className="absolute bottom-5 right-6 flex items-center gap-2">
-              {slides.map((_, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  aria-label={`Go to slide ${i + 1}`}
-                  onClick={() => go(i, i > index ? 1 : -1)}
-                  className={`h-2 rounded-full transition-all ${
-                    i === index ? 'w-6 bg-brand-400' : 'w-2 bg-white/50 hover:bg-white/80'
-                  }`}
-                />
-              ))}
-            </div>
-          )}
 
           {/* Autoplay progress bar */}
           {count > 1 && !reduce && !paused && (

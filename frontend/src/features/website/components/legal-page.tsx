@@ -1,5 +1,5 @@
-import DOMPurify from 'isomorphic-dompurify';
 import { serverApi, CACHE_TAGS } from '@/shared/lib/api';
+import { sanitizeHtml } from '@/shared/lib/sanitize';
 import { BackButton } from '@/shared/ui/back-button';
 
 /**
@@ -20,7 +20,7 @@ export async function LegalPage({
     tags: [CACHE_TAGS.cms],
   });
   const raw = (data?.content ?? '').trim();
-  const html = raw ? DOMPurify.sanitize(raw) : '';
+  const html = raw ? sanitizeHtml(raw) : '';
 
   return (
     <div className="container-page max-w-3xl py-14">

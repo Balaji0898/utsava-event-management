@@ -17,7 +17,7 @@ export function TestimonialForm() {
   const { t } = useI18n();
   const [name, setName] = useState('');
   const [role, setRole] = useState('');
-  const [rating, setRating] = useState(5);
+  const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
   const [message, setMessage] = useState('');
   const [status, setStatus] = useState<'idle' | 'sending' | 'done'>('idle');
@@ -26,6 +26,10 @@ export function TestimonialForm() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim() || !message.trim()) return;
+    if (rating < 1) {
+      setError(t('reviewForm.ratingRequired'));
+      return;
+    }
     setStatus('sending');
     setError('');
     try {

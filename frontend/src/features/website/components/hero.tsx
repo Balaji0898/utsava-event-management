@@ -109,7 +109,18 @@ export function Hero() {
               </Field>
               <Divider />
               <Field icon={<CalendarDays size={18} />} label={t('hero.dateFrom')}>
-                <input type="date" className="w-full bg-transparent text-sm font-semibold outline-none" />
+                {/* Starts as text so the placeholder shows (native date inputs
+                    can't); becomes a date picker on focus. */}
+                <input
+                  name="date"
+                  type="text"
+                  placeholder={t('hero.datePlaceholder')}
+                  onFocus={(e) => (e.currentTarget.type = 'date')}
+                  onBlur={(e) => {
+                    if (!e.currentTarget.value) e.currentTarget.type = 'text';
+                  }}
+                  className="w-full bg-transparent text-sm font-semibold outline-none placeholder:font-normal placeholder:text-[rgb(var(--foreground))]/40"
+                />
               </Field>
               <Divider />
               <Field icon={<PartyPopper size={18} />} label={t('hero.event')}>
