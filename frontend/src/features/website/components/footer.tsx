@@ -6,6 +6,7 @@ import { useI18n } from '@/shared/i18n';
 import { Logo } from '@/shared/ui/logo';
 import { site, telHref, whatsappHref, mailHref } from '@/shared/config/site';
 import { useSiteContact } from '@/shared/config/site-contact-context';
+import { Tr } from '@/shared/i18n/tr';
 
 export function Footer() {
   const { t } = useI18n();
@@ -44,7 +45,9 @@ export function Footer() {
             <div className="font-display text-base font-semibold text-[rgb(var(--foreground))]">
               {contact.manager}
             </div>
-            <div className="text-xs text-accent">{contact.role}</div>
+            <div className="text-xs text-accent">
+              <Tr>{contact.role}</Tr>
+            </div>
             <a href={telHref(contact.phone)} className="mt-3 flex items-center gap-2 hover:text-[rgb(var(--accent))]">
               <Phone size={15} /> {contact.phoneDisplay}
             </a>

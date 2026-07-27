@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { MapPin, Users, ArrowUpRight, Star } from 'lucide-react';
 import { TiltCard } from '@/shared/motion/tilt-card';
 import { formatCurrency } from '@/shared/lib/utils';
+import { Tr } from '@/shared/i18n/tr';
 
 const Hero3D = dynamic(() => import('@/features/website/components/hero-3d'), {
   ssr: false,
@@ -92,7 +93,7 @@ export function FunctionHallsSection({
                     <div className="mt-2 flex flex-wrap gap-3 text-xs text-[rgb(var(--foreground))]/60">
                       {h.location && (
                         <span className="flex items-center gap-1">
-                          <MapPin size={13} /> {h.location}
+                          <MapPin size={13} /> <Tr>{h.location}</Tr>
                         </span>
                       )}
                       {cap && (

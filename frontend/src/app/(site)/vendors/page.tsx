@@ -4,6 +4,7 @@ import { Reveal } from '@/shared/motion/primitives';
 import { TiltCard } from '@/shared/motion/tilt-card';
 import { BackButton } from '@/shared/ui/back-button';
 import { formatCurrency } from '@/shared/lib/utils';
+import { Tr } from '@/shared/i18n/tr';
 import { Star, ShieldCheck } from 'lucide-react';
 
 export const metadata = { title: 'Vendors' };
@@ -68,7 +69,7 @@ export default async function VendorsPage({
       <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {vendors.map((v) => (
           <TiltCard key={v.id} className="card h-full overflow-hidden">
-            <Link href={`/vendors/${v.slug}`}>
+            <Link href={`/vendors/${v.slug}`} className="flex h-full flex-col">
               <div className="relative h-40 overflow-hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -78,10 +79,10 @@ export default async function VendorsPage({
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
               </div>
-              <div className="p-5">
+              <div className="flex flex-1 flex-col p-5">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium text-accent">
-                    {v.department?.name}
+                    <Tr>{v.department?.name}</Tr>
                   </span>
                   <span className="flex items-center gap-1 text-xs">
                     <Star size={12} className="fill-yellow-400 text-yellow-400" />
@@ -93,9 +94,9 @@ export default async function VendorsPage({
                   {v.verified && <ShieldCheck size={16} className="text-accent" />}
                 </h3>
                 <p className="mt-1 line-clamp-2 text-sm text-[rgb(var(--foreground))]/60">
-                  {v.description}
+                  <Tr>{v.description}</Tr>
                 </p>
-                <div className="mt-4 text-sm">
+                <div className="mt-auto pt-4 text-sm">
                   From <span className="font-bold">{formatCurrency(Number(v.priceFrom))}</span>
                 </div>
               </div>

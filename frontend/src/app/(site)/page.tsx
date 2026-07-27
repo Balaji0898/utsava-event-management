@@ -13,6 +13,7 @@ import { FunctionHallsSection, type Hall } from '@/features/website/components/f
 import { BestEventsSlider, type BestEventSlide } from '@/features/website/components/best-events-slider';
 import { VendorGridSkeleton } from '@/shared/ui/skeletons';
 import { T } from '@/shared/i18n';
+import { Tr } from '@/shared/i18n/tr';
 
 // Render at request time (not prerendered at build) so the homepage always
 // shows live data and never a stale/empty page baked while the backend was
@@ -180,7 +181,9 @@ function StatsGrid({ items }: { items: StatItem[] }) {
             <div className="text-3xl font-extrabold text-accent">
               <AnimatedCounter to={s.value} suffix={s.suffix ?? ''} />
             </div>
-            <div className="mt-1 text-sm text-[rgb(var(--foreground))]/60">{s.label}</div>
+            <div className="mt-1 text-sm text-[rgb(var(--foreground))]/60">
+              <Tr>{s.label}</Tr>
+            </div>
           </div>
         </StaggerItem>
       ))}
@@ -203,7 +206,7 @@ async function ServicesGrid() {
       {departments.map((d) => (
         <StaggerItem key={d.id}>
           <TiltCard className="card h-full overflow-hidden">
-            <Link href={`/vendors?departmentId=${d.id}`}>
+            <Link href={`/vendors?departmentId=${d.id}`} className="flex h-full flex-col">
               <div className="relative h-40 overflow-hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -214,14 +217,16 @@ async function ServicesGrid() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                 <div className="absolute bottom-3 left-4 flex items-center gap-2 text-2xl">
                   <span>{d.icon}</span>
-                  <span className="text-lg font-bold text-white">{d.name}</span>
+                  <span className="text-lg font-bold text-white">
+                    <Tr>{d.name}</Tr>
+                  </span>
                 </div>
               </div>
-              <div className="p-6">
+              <div className="flex flex-1 flex-col p-6">
                 <p className="text-sm text-[rgb(var(--foreground))]/60">
-                  {d.description ?? <T k="services.explore" />}
+                  {d.description ? <Tr>{d.description}</Tr> : <T k="services.explore" />}
                 </p>
-                <div className="mt-4 text-sm font-medium text-accent">
+                <div className="mt-auto pt-4 text-sm font-medium text-accent">
                   {d._count?.vendors ?? 0} <T k="services.vendorsSuffix" /> →
                 </div>
               </div>

@@ -13,6 +13,7 @@ import {
 } from 'framer-motion';
 import { Award, ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatCurrency } from '@/shared/lib/utils';
+import { Tr } from '@/shared/i18n/tr';
 
 export type BestEventSlide = {
   category: string;
@@ -146,14 +147,14 @@ export function BestEventsSlider({ slides }: { slides: BestEventSlide[] }) {
                   </motion.span>
                 )}
                 <div className="mt-3 text-sm font-medium text-brand-200">
-                  {s.icon} {s.category}
+                  {s.icon} <Tr>{s.category}</Tr>
                 </div>
                 <h3 className="mt-1 font-display text-2xl font-bold leading-tight sm:text-4xl lg:text-5xl">
                   {s.title}
                 </h3>
                 {s.description && (
                   <p className="mt-3 line-clamp-2 max-w-xl text-sm text-white/80 sm:text-base">
-                    {s.description}
+                    <Tr>{s.description}</Tr>
                   </p>
                 )}
                 <div className="mt-5 flex flex-wrap items-center gap-4">

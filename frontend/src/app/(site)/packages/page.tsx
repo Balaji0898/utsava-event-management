@@ -4,6 +4,7 @@ import { Reveal } from '@/shared/motion/primitives';
 import { TiltCard } from '@/shared/motion/tilt-card';
 import { BackButton } from '@/shared/ui/back-button';
 import { T } from '@/shared/i18n';
+import { Tr } from '@/shared/i18n/tr';
 import { formatCurrency } from '@/shared/lib/utils';
 import { Check } from 'lucide-react';
 
@@ -44,22 +45,24 @@ export default async function PackagesPage() {
         {packages.map((p) => (
           <TiltCard
             key={p.id}
-            className={`card h-full p-6 ${p.popular ? 'ring-2 ring-brand-500' : ''}`}
+            className={`card flex h-full flex-col p-6 ${p.popular ? 'ring-2 ring-brand-500' : ''}`}
           >
-            <h3 className="text-lg font-semibold">{p.name}</h3>
+            <h3 className="text-lg font-semibold">
+              <Tr>{p.name}</Tr>
+            </h3>
             <div className="mt-2 text-3xl font-extrabold">
               {formatCurrency(Number(p.price))}
             </div>
             <ul className="mt-4 space-y-2 text-sm">
               {p.features.map((f) => (
                 <li key={f} className="flex items-center gap-2">
-                  <Check size={16} className="text-accent" /> {f}
+                  <Check size={16} className="shrink-0 text-accent" /> <Tr>{f}</Tr>
                 </li>
               ))}
             </ul>
             <Link
               href={`/book?vendorId=${p.vendorId}&packageId=${p.id}`}
-              className="btn-primary mt-6 w-full"
+              className="btn-primary mt-auto w-full"
             >
               <T k="packagesPage.bookNow" />
             </Link>

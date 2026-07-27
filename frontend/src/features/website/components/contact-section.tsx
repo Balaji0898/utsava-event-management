@@ -5,6 +5,7 @@ import { Phone, MessageCircle, Mail, Sparkles } from 'lucide-react';
 import { useI18n } from '@/shared/i18n';
 import { site, telHref, whatsappHref, mailHref } from '@/shared/config/site';
 import { useSiteContact } from '@/shared/config/site-contact-context';
+import { Tr } from '@/shared/i18n/tr';
 
 export function ContactSection() {
   const { t } = useI18n();
@@ -37,7 +38,9 @@ export function ContactSection() {
                   {t('contact.manager')}
                 </div>
                 <div className="font-display text-2xl font-bold">{contact.manager}</div>
-                <div className="text-sm text-white/60">{contact.role}</div>
+                <div className="text-sm text-white/60">
+                  <Tr>{contact.role}</Tr>
+                </div>
               </div>
             </div>
 

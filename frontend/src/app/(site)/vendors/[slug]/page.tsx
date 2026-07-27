@@ -4,7 +4,9 @@ import { serverApi, CACHE_TAGS } from '@/shared/lib/api';
 import { Reveal } from '@/shared/motion/primitives';
 import { TiltCard } from '@/shared/motion/tilt-card';
 import { BackButton } from '@/shared/ui/back-button';
+import { Gallery } from '@/features/website/components/gallery';
 import { formatCurrency } from '@/shared/lib/utils';
+import { Tr } from '@/shared/i18n/tr';
 import { Star, ShieldCheck, MapPin, Phone, Check } from 'lucide-react';
 
 type Pkg = {
@@ -54,7 +56,7 @@ export default async function VendorDetail({ params }: { params: { slug: string 
           </div>
           <div className="p-8">
             <span className="text-sm font-medium text-accent">
-              {vendor.department?.name}
+              <Tr>{vendor.department?.name}</Tr>
             </span>
             <h1 className="mt-1 flex items-center gap-2 text-3xl font-bold">
               {vendor.name}
@@ -67,7 +69,7 @@ export default async function VendorDetail({ params }: { params: { slug: string 
               </span>
               {vendor.location && (
                 <span className="flex items-center gap-1">
-                  <MapPin size={14} /> {vendor.location}
+                  <MapPin size={14} /> <Tr>{vendor.location}</Tr>
                 </span>
               )}
               {vendor.contactNumber && (
@@ -77,7 +79,7 @@ export default async function VendorDetail({ params }: { params: { slug: string 
               )}
             </div>
             <p className="mt-4 max-w-2xl text-[rgb(var(--foreground))]/70">
-              {vendor.description}
+              <Tr>{vendor.description}</Tr>
             </p>
           </div>
         </div>
@@ -86,19 +88,7 @@ export default async function VendorDetail({ params }: { params: { slug: string 
       {vendor.gallery && vendor.gallery.length > 0 && (
         <>
           <h2 className="mt-14 text-2xl font-bold">Gallery</h2>
-          <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3">
-            {vendor.gallery.map((g, i) => (
-              <div key={i} className="card relative h-48 overflow-hidden">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={g}
-                  alt={`${vendor.name} ${i + 1}`}
-                  className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
-                />
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-              </div>
-            ))}
-          </div>
+          <Gallery images={vendor.gallery} name={vendor.name} />
         </>
       )}
 
@@ -107,7 +97,7 @@ export default async function VendorDetail({ params }: { params: { slug: string 
         {vendor.packages.map((p) => (
           <TiltCard
             key={p.id}
-            className={`card relative p-6 ${
+            className={`card relative flex h-full flex-col p-6 ${
               p.popular ? 'ring-2 ring-brand-500' : ''
             }`}
           >
@@ -116,20 +106,22 @@ export default async function VendorDetail({ params }: { params: { slug: string 
                 Most popular
               </span>
             )}
-            <h3 className="text-lg font-semibold">{p.name}</h3>
+            <h3 className="text-lg font-semibold">
+              <Tr>{p.name}</Tr>
+            </h3>
             <div className="mt-2 text-3xl font-extrabold">
               {formatCurrency(Number(p.price))}
             </div>
             <ul className="mt-4 space-y-2 text-sm">
               {p.features.map((f) => (
                 <li key={f} className="flex items-center gap-2">
-                  <Check size={16} className="text-accent" /> {f}
+                  <Check size={16} className="shrink-0 text-accent" /> <Tr>{f}</Tr>
                 </li>
               ))}
             </ul>
             <Link
               href={`/book?vendorId=${vendor.id}&packageId=${p.id}`}
-              className="btn-primary mt-6 w-full"
+              className="btn-primary mt-auto w-full"
             >
               Book this package
             </Link>
@@ -148,7 +140,9 @@ export default async function VendorDetail({ params }: { params: { slug: string 
                     <Star key={i} size={14} className="fill-yellow-400 text-yellow-400" />
                   ))}
                 </div>
-                <p className="mt-2 text-sm">{r.comment}</p>
+                <p className="mt-2 text-sm">
+                  <Tr>{r.comment}</Tr>
+                </p>
                 <p className="mt-2 text-xs text-[rgb(var(--foreground))]/50">
                   — {r.authorName ?? 'Customer'}
                 </p>

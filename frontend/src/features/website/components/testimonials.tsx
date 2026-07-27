@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Star, ArrowUpRight } from 'lucide-react';
 import { useI18n } from '@/shared/i18n';
+import { Tr } from '@/shared/i18n/tr';
 import { Carousel } from '@/shared/ui/carousel';
 
 export type Testimonial = {
@@ -30,7 +31,9 @@ export function TestimonialCard({ t: item }: { t: Testimonial }) {
           <Star key={s} size={14} className="fill-yellow-400 text-yellow-400" />
         ))}
       </div>
-      <p className="mt-3 flex-1 text-sm text-[rgb(var(--foreground))]/80">“{item.message}”</p>
+      <p className="mt-3 flex-1 text-sm text-[rgb(var(--foreground))]/80">
+        “<Tr>{item.message}</Tr>”
+      </p>
       <div className="mt-5 flex items-center gap-3">
         {item.avatar && (
           // eslint-disable-next-line @next/next/no-img-element
@@ -38,7 +41,9 @@ export function TestimonialCard({ t: item }: { t: Testimonial }) {
         )}
         <div>
           <div className="text-sm font-semibold">{item.name}</div>
-          <div className="text-xs text-[rgb(var(--foreground))]/50">{item.role}</div>
+          <div className="text-xs text-[rgb(var(--foreground))]/50">
+            <Tr>{item.role}</Tr>
+          </div>
         </div>
       </div>
     </motion.div>

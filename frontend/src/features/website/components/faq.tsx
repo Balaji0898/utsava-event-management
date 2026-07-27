@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { useI18n } from '@/shared/i18n';
+import { Tr } from '@/shared/i18n/tr';
 
 type FaqItem = { id: string; question: string; answer: string };
 
@@ -24,7 +25,7 @@ export function Faq({ items }: { items: FaqItem[] }) {
                 onClick={() => setOpen(isOpen ? null : f.id)}
                 className="flex w-full items-center justify-between px-6 py-4 text-left font-medium"
               >
-                {f.question}
+                <Tr>{f.question}</Tr>
                 <motion.span animate={{ rotate: isOpen ? 180 : 0 }}>
                   <ChevronDown size={18} />
                 </motion.span>
@@ -38,7 +39,7 @@ export function Faq({ items }: { items: FaqItem[] }) {
                     className="overflow-hidden"
                   >
                     <p className="px-6 pb-5 text-sm text-[rgb(var(--foreground))]/70">
-                      {f.answer}
+                      <Tr>{f.answer}</Tr>
                     </p>
                   </motion.div>
                 )}
