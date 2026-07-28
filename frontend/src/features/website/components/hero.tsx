@@ -2,11 +2,13 @@
 
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import { useRef, useState } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { ArrowUpRight, Search, MapPin, CalendarDays, PartyPopper, Sparkles } from 'lucide-react';
 import { useI18n } from '@/shared/i18n';
 import { Magnetic } from '@/shared/motion/magnetic';
+import { LocationInput } from '@/shared/ui/location-input';
 
 // WebGL scene — client only, never server-rendered.
 const Hero3D = dynamic(() => import('@/features/website/components/hero-3d'), {
@@ -18,7 +20,10 @@ const HERO_IMAGE =
 
 export function Hero() {
   const { t } = useI18n();
+  const router = useRouter();
   const ref = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const [city, setCity] = useState('');
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
   const imgY = useTransform(scrollYProgress, [0, 1], ['0%', '16%']);
   const imgScale = useTransform(scrollYProgress, [0, 1], [1, 1.1]);
@@ -94,6 +99,7 @@ export function Hero() {
 
             {/* Detail / search bar — in normal flow, fully responsive */}
             <motion.form
+              ref={formRef}
               action="/vendors"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -101,10 +107,19 @@ export function Hero() {
               className="mt-8 flex flex-col gap-2 rounded-3xl bg-white/95 p-3 shadow-luxe backdrop-blur dark:bg-[#181410] sm:mt-10 lg:mt-12 lg:max-w-4xl lg:flex-row lg:items-center lg:gap-1"
             >
               <Field icon={<MapPin size={18} />} label={t('hero.place')}>
-                <input
+                {/* City with free autocomplete + "use my location". Detecting your
+                    position searches by exact coordinates (/vendors?lat=&lng=),
+                    which shows nearby events and falls back to all events when
+                    nothing is close. Typing a city still searches by name. */}
+                <LocationInput
                   name="city"
+                  value={city}
+                  onChange={setCity}
+                  onGeoCoords={(lat, lng) =>
+                    router.push(`/vendors?lat=${lat}&lng=${lng}`)
+                  }
                   placeholder={t('hero.searchPlaceholderPlace')}
-                  className="w-full bg-transparent text-sm font-semibold outline-none placeholder:text-[rgb(var(--foreground))]/40"
+                  inputClassName="w-full bg-transparent text-sm font-semibold outline-none placeholder:text-[rgb(var(--foreground))]/40"
                 />
               </Field>
               <Divider />

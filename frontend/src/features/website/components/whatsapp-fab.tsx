@@ -11,7 +11,9 @@ export function WhatsappFab() {
     <motion.a
       href={whatsappHref(contact.whatsapp)}
       target="_blank"
+      rel="noopener noreferrer"
       aria-label="Chat on WhatsApp"
+      data-testid="whatsapp-fab"
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ delay: 1, type: 'spring', stiffness: 260, damping: 18 }}

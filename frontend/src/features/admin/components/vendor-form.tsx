@@ -7,6 +7,7 @@ import { Save, ArrowLeft } from 'lucide-react';
 import { api } from '@/shared/lib/api';
 import { ImageUploader } from '@/features/admin/components/image-uploader';
 import { GalleryUploader } from '@/features/admin/components/gallery-uploader';
+import { LocationInput } from '@/shared/ui/location-input';
 
 type Department = { id: string; name: string };
 
@@ -80,11 +81,20 @@ export function VendorForm({ initial }: { initial?: Partial<VendorData> | null }
   const [error, setError] = useState('');
 
   useEffect(() => {
-    api<Department[]>('/departments?all=true').then(setDepartments).catch(() => {});
+    api<Department[]>('/departments?all=true', { auth: true }).then(setDepartments).catch(() => {});
   }, []);
 
   function set<K extends keyof VendorData>(key: K, val: VendorData[K]) {
     setForm((f) => ({ ...f, [key]: val }));
+  }
+
+  // Add a detected/picked city to availableCities (deduped, case-insensitive).
+  function addCity(cityName: string) {
+    const c = cityName.trim();
+    if (!c || form.availableCities.some((x) => x.toLowerCase() === c.toLowerCase())) return;
+    const next = [...form.availableCities, c];
+    set('availableCities', next);
+    setCitiesText(next.join(', '));
   }
 
   async function submit(e: React.FormEvent) {
@@ -127,30 +137,43 @@ export function VendorForm({ initial }: { initial?: Partial<VendorData> | null }
   }
 
   return (
-    <form onSubmit={submit} className="space-y-6">
+    <form onSubmit={submit} className="space-y-6" data-testid="vend-form">
       <div className="flex items-center justify-between">
         <button
           type="button"
           onClick={() => router.push('/admin/vendors')}
           className="inline-flex items-center gap-2 text-sm text-[rgb(var(--foreground))]/60 hover:text-brand-500"
         >
-          <ArrowLeft size={16} /> Back to vendors
+          <ArrowLeft size={16} aria-hidden /> Back to vendors
         </button>
-        <button disabled={saving} className="btn-primary">
-          <Save size={16} className="mr-2" /> {saving ? 'Saving…' : 'Save vendor'}
+        <button disabled={saving} data-testid="vend-submit" className="btn-primary">
+          <Save size={16} aria-hidden className="mr-2" /> {saving ? 'Saving…' : 'Save vendor'}
         </button>
       </div>
 
-      {error && <p className="card border-red-500/40 p-3 text-sm text-red-500">{error}</p>}
+      {error && (
+        <p role="alert" data-testid="vend-error" className="card border-red-500/40 p-3 text-sm text-red-500">
+          {error}
+        </p>
+      )}
 
       {/* Details */}
       <Section title="Details">
         <div className="grid gap-4 md:grid-cols-2">
-          <Field label="Vendor / work name *">
-            <input className={inputCls} value={form.name} onChange={(e) => set('name', e.target.value)} required />
+          <Field label="Vendor / work name *" htmlFor="vend-name">
+            <input
+              id="vend-name"
+              data-testid="vend-name"
+              className={inputCls}
+              value={form.name}
+              onChange={(e) => set('name', e.target.value)}
+              required
+            />
           </Field>
-          <Field label="Department / service *">
+          <Field label="Department / service *" htmlFor="vend-department">
             <select
+              id="vend-department"
+              data-testid="vend-department"
               className={inputCls}
               value={form.departmentId}
               onChange={(e) => set('departmentId', e.target.value)}
@@ -164,8 +187,10 @@ export function VendorForm({ initial }: { initial?: Partial<VendorData> | null }
               ))}
             </select>
           </Field>
-          <Field label="Experience (years)">
+          <Field label="Experience (years)" htmlFor="vend-experience">
             <input
+              id="vend-experience"
+              data-testid="vend-experience"
               type="number"
               min={0}
               className={inputCls}
@@ -174,11 +199,22 @@ export function VendorForm({ initial }: { initial?: Partial<VendorData> | null }
               onChange={(e) => set('experience', e.target.value === '' ? 0 : Number(e.target.value))}
             />
           </Field>
-          <Field label="Location">
-            <input className={inputCls} value={form.location} onChange={(e) => set('location', e.target.value)} />
+          <Field label="Location" htmlFor="vend-location">
+            {/* Autocomplete + "use my location" (free OSM). A picked city is
+                also added to Available cities below. */}
+            <LocationInput
+              id="vend-location"
+              testId="vend-location"
+              value={form.location}
+              onChange={(v) => set('location', v)}
+              onResolveCity={(c) => addCity(c)}
+              inputClassName={inputCls}
+            />
           </Field>
-          <Field label="Available cities (comma separated)" full>
+          <Field label="Available cities (comma separated)" htmlFor="vend-cities" full>
             <input
+              id="vend-cities"
+              data-testid="vend-cities"
               className={inputCls}
               placeholder="Hyderabad, Bengaluru, Chennai"
               value={citiesText}
@@ -192,8 +228,10 @@ export function VendorForm({ initial }: { initial?: Partial<VendorData> | null }
               }}
             />
           </Field>
-          <Field label="Description" full>
+          <Field label="Description" htmlFor="vend-description" full>
             <textarea
+              id="vend-description"
+              data-testid="vend-description"
               rows={4}
               className={inputCls}
               value={form.description}
@@ -221,23 +259,59 @@ export function VendorForm({ initial }: { initial?: Partial<VendorData> | null }
       {/* Contact */}
       <Section title="Contact Details">
         <div className="grid gap-4 md:grid-cols-2">
-          <Field label="Contact number">
-            <input className={inputCls} value={form.contactNumber} onChange={(e) => set('contactNumber', e.target.value)} />
+          <Field label="Contact number" htmlFor="vend-contact-number">
+            <input
+              id="vend-contact-number"
+              data-testid="vend-contact-number"
+              className={inputCls}
+              value={form.contactNumber}
+              onChange={(e) => set('contactNumber', e.target.value)}
+            />
           </Field>
-          <Field label="WhatsApp">
-            <input className={inputCls} value={form.whatsapp} onChange={(e) => set('whatsapp', e.target.value)} />
+          <Field label="WhatsApp" htmlFor="vend-whatsapp">
+            <input
+              id="vend-whatsapp"
+              data-testid="vend-whatsapp"
+              className={inputCls}
+              value={form.whatsapp}
+              onChange={(e) => set('whatsapp', e.target.value)}
+            />
           </Field>
-          <Field label="Email">
-            <input className={inputCls} value={form.email} onChange={(e) => set('email', e.target.value)} />
+          <Field label="Email" htmlFor="vend-email">
+            <input
+              id="vend-email"
+              data-testid="vend-email"
+              className={inputCls}
+              value={form.email}
+              onChange={(e) => set('email', e.target.value)}
+            />
           </Field>
-          <Field label="Website">
-            <input className={inputCls} value={form.website} onChange={(e) => set('website', e.target.value)} />
+          <Field label="Website" htmlFor="vend-website">
+            <input
+              id="vend-website"
+              data-testid="vend-website"
+              className={inputCls}
+              value={form.website}
+              onChange={(e) => set('website', e.target.value)}
+            />
           </Field>
-          <Field label="Instagram">
-            <input className={inputCls} value={form.instagram} onChange={(e) => set('instagram', e.target.value)} />
+          <Field label="Instagram" htmlFor="vend-instagram">
+            <input
+              id="vend-instagram"
+              data-testid="vend-instagram"
+              className={inputCls}
+              value={form.instagram}
+              onChange={(e) => set('instagram', e.target.value)}
+            />
           </Field>
-          <Field label="Facebook">
-            <input className={inputCls} value={form.facebook} onChange={(e) => set('facebook', e.target.value)} />
+          <Field label="Facebook" htmlFor="vend-facebook">
+            <input
+              id="vend-facebook"
+              data-testid="vend-facebook"
+              className={inputCls}
+              value={form.facebook}
+              onChange={(e) => set('facebook', e.target.value)}
+            />
           </Field>
         </div>
       </Section>
@@ -245,8 +319,10 @@ export function VendorForm({ initial }: { initial?: Partial<VendorData> | null }
       {/* Pricing & flags */}
       <Section title="Pricing & Visibility">
         <div className="grid gap-4 md:grid-cols-3">
-          <Field label="Price from (₹)">
+          <Field label="Price from (₹)" htmlFor="vend-price-from">
             <input
+              id="vend-price-from"
+              data-testid="vend-price-from"
               type="number"
               min={0}
               className={inputCls}
@@ -255,8 +331,10 @@ export function VendorForm({ initial }: { initial?: Partial<VendorData> | null }
               onChange={(e) => set('priceFrom', e.target.value === '' ? 0 : Number(e.target.value))}
             />
           </Field>
-          <Field label="Price to (₹)">
+          <Field label="Price to (₹)" htmlFor="vend-price-to">
             <input
+              id="vend-price-to"
+              data-testid="vend-price-to"
               type="number"
               min={0}
               className={inputCls}
@@ -265,8 +343,10 @@ export function VendorForm({ initial }: { initial?: Partial<VendorData> | null }
               onChange={(e) => set('priceTo', e.target.value === '' ? 0 : Number(e.target.value))}
             />
           </Field>
-          <Field label="Discount (%)">
+          <Field label="Discount (%)" htmlFor="vend-discount">
             <input
+              id="vend-discount"
+              data-testid="vend-discount"
               type="number"
               min={0}
               max={100}
@@ -279,19 +359,31 @@ export function VendorForm({ initial }: { initial?: Partial<VendorData> | null }
         </div>
         <div className="mt-4 flex flex-wrap gap-4">
           {([
-            ['available', 'Available'],
-            ['featured', 'Best Event (home slider — one per category)'],
-            ['trending', 'Trending'],
-            ['verified', 'Verified'],
-          ] as const).map(([flag, label]) => (
+            ['available', 'Available', 'vend-available'],
+            ['featured', 'Best Event (home slider — one per category)', 'vend-featured'],
+            ['trending', 'Trending', 'vend-trending'],
+            ['verified', 'Verified', 'vend-verified'],
+          ] as const).map(([flag, label, testId]) => (
             <label key={flag} className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={form[flag]} onChange={(e) => set(flag, e.target.checked)} className="h-4 w-4 accent-brand-500" />
+              <input
+                type="checkbox"
+                data-testid={testId}
+                checked={form[flag]}
+                onChange={(e) => set(flag, e.target.checked)}
+                className="h-4 w-4 accent-brand-500"
+              />
               {label}
             </label>
           ))}
-          <label className="flex items-center gap-2 text-sm">
+          <label className="flex items-center gap-2 text-sm" htmlFor="vend-status">
             Status:
-            <select className={`${inputCls} w-auto py-1`} value={form.status} onChange={(e) => set('status', e.target.value as any)}>
+            <select
+              id="vend-status"
+              data-testid="vend-status"
+              className={`${inputCls} w-auto py-1`}
+              value={form.status}
+              onChange={(e) => set('status', e.target.value as any)}
+            >
               <option value="ACTIVE">Active</option>
               <option value="INACTIVE">Inactive</option>
             </select>
@@ -315,10 +407,31 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function Field({ label, children, full }: { label: string; children: React.ReactNode; full?: boolean }) {
+/**
+ * A labelled form row. `htmlFor` must match the `id` of the control inside, so the
+ * label is programmatically associated with it — that is what makes the field
+ * reachable by assistive tech and by `getByLabel`. Several controls here also share
+ * `placeholder="0"`, so the association is the only thing that tells them apart.
+ */
+function Field({
+  label,
+  htmlFor,
+  children,
+  full,
+}: {
+  label: string;
+  htmlFor?: string;
+  children: React.ReactNode;
+  full?: boolean;
+}) {
   return (
     <div className={full ? 'md:col-span-2' : ''}>
-      <label className="mb-1 block text-xs font-medium text-[rgb(var(--foreground))]/70">{label}</label>
+      <label
+        htmlFor={htmlFor}
+        className="mb-1 block text-xs font-medium text-[rgb(var(--foreground))]/70"
+      >
+        {label}
+      </label>
       {children}
     </div>
   );

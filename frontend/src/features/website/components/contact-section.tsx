@@ -63,6 +63,7 @@ export function ContactSection() {
                 <a
                   href={whatsappHref(contact.whatsapp)}
                   target="_blank"
+                  rel="noopener noreferrer"
                   className="inline-flex items-center justify-center rounded-full bg-emerald-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-600"
                 >
                   <MessageCircle size={16} className="mr-2" /> {t('contact.whatsapp')}

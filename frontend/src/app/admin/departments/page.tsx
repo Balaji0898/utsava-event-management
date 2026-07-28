@@ -34,7 +34,7 @@ export default function AdminDepartments() {
 
   async function load() {
     try {
-      setItems(await api<Department[]>('/departments?all=true'));
+      setItems(await api<Department[]>('/departments?all=true', { auth: true }));
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -113,37 +113,37 @@ export default function AdminDepartments() {
       </p>
 
       {/* Create */}
-      <form onSubmit={create} className="card mb-6 grid gap-4 p-5 md:grid-cols-2">
+      <form onSubmit={create} data-testid="dept-create-form" className="card mb-6 grid gap-4 p-5 md:grid-cols-2">
         <div>
-          <label className="mb-1 block text-xs font-medium">Name</label>
-          <input className={field} value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="e.g. Mehendi" />
+          <label htmlFor="dept-name" className="mb-1 block text-xs font-medium">Name</label>
+          <input id="dept-name" data-testid="dept-name" className={field} value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="e.g. Mehendi" />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium">Icon (emoji)</label>
-          <input className={field} value={draft.icon} onChange={(e) => setDraft({ ...draft, icon: e.target.value })} placeholder="🎨" />
+          <label htmlFor="dept-icon" className="mb-1 block text-xs font-medium">Icon (emoji)</label>
+          <input id="dept-icon" data-testid="dept-icon" className={field} value={draft.icon} onChange={(e) => setDraft({ ...draft, icon: e.target.value })} placeholder="🎨" />
         </div>
         <div className="md:col-span-2">
-          <label className="mb-1 block text-xs font-medium">Description</label>
-          <textarea className={field} rows={2} value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} placeholder="Short description shown on the category card" />
+          <label htmlFor="dept-description" className="mb-1 block text-xs font-medium">Description</label>
+          <textarea id="dept-description" data-testid="dept-description" className={field} rows={2} value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} placeholder="Short description shown on the category card" />
         </div>
         <div className="md:col-span-2">
           <label className="mb-1 block text-xs font-medium">Banner image</label>
           <ImageUploader folder="departments" value={draft.banner} onChange={(u) => setDraft({ ...draft, banner: u })} />
         </div>
         <div>
-          <button disabled={loading} className="btn-primary">
-            <Plus size={16} className="mr-1" /> Add category
+          <button disabled={loading} data-testid="dept-submit" className="btn-primary">
+            <Plus size={16} aria-hidden className="mr-1" /> Add category
           </button>
         </div>
       </form>
 
-      {error && <p className="mb-4 text-sm text-red-500">{error}</p>}
+      {error && <p role="alert" className="mb-4 text-sm text-red-500">{error}</p>}
 
       {initialLoading ? (
         <TableSkeleton rows={5} cols={5} />
       ) : (
         <div className="card overflow-hidden">
-          <table className="w-full text-sm">
+          <table data-testid="dept-table" className="w-full text-sm">
             <thead className="border-b bg-[rgb(var(--muted))] text-left">
               <tr>
                 <th className="px-5 py-3">Category</th>
@@ -160,6 +160,7 @@ export default function AdminDepartments() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: i * 0.03 }}
+                  data-testid={`dept-row-${d.id}`}
                   className="border-b last:border-0"
                 >
                   <td className="px-5 py-3 font-medium">
@@ -170,10 +171,14 @@ export default function AdminDepartments() {
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={d.banner} alt={d.name} className="h-10 w-16 rounded-md object-cover" />
                     ) : (
-                      <span className="text-xs text-amber-500">No image</span>
+                      <span data-testid={`dept-row-no-image-${d.id}`} className="text-xs text-amber-500">
+                        No image
+                      </span>
                     )}
                   </td>
-                  <td className="px-5 py-3">{d._count?.vendors ?? 0}</td>
+                  <td data-testid={`dept-row-vendors-${d.id}`} className="px-5 py-3">
+                    {d._count?.vendors ?? 0}
+                  </td>
                   <td className="px-5 py-3">
                     <span className="rounded-full bg-emerald-500/10 px-2 py-1 text-xs text-emerald-500">
                       {d.status}
@@ -181,11 +186,21 @@ export default function AdminDepartments() {
                   </td>
                   <td className="px-5 py-3">
                     <div className="flex items-center justify-end gap-3">
-                      <button onClick={() => setEditing(d)} className="text-[rgb(var(--foreground))]/60 hover:text-brand-500" aria-label="Edit">
-                        <Pencil size={16} />
+                      <button
+                        onClick={() => setEditing(d)}
+                        className="text-[rgb(var(--foreground))]/60 hover:text-brand-500"
+                        aria-label={`Edit ${d.name}`}
+                        data-testid={`dept-row-edit-${d.id}`}
+                      >
+                        <Pencil size={16} aria-hidden />
                       </button>
-                      <button onClick={() => remove(d.id)} className="text-red-500 hover:text-red-600" aria-label="Delete">
-                        <Trash2 size={16} />
+                      <button
+                        onClick={() => remove(d.id)}
+                        className="text-red-500 hover:text-red-600"
+                        aria-label={`Delete ${d.name}`}
+                        data-testid={`dept-row-delete-${d.id}`}
+                      >
+                        <Trash2 size={16} aria-hidden />
                       </button>
                     </div>
                   </td>
@@ -193,7 +208,11 @@ export default function AdminDepartments() {
               ))}
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-5 py-8 text-center text-[rgb(var(--foreground))]/50">
+                  <td
+                    colSpan={5}
+                    data-testid="dept-empty"
+                    className="px-5 py-8 text-center text-[rgb(var(--foreground))]/50"
+                  >
                     No categories yet.
                   </td>
                 </tr>
@@ -205,39 +224,48 @@ export default function AdminDepartments() {
 
       {/* Edit modal */}
       {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setEditing(null)}>
+        <div
+          // A real dialog: role + aria-modal + an accessible name from the heading, so
+          // assistive tech announces it as a modal rather than as an anonymous div.
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="dept-modal-title"
+          data-testid="dept-modal"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setEditing(null)}
+        >
           <form
             onSubmit={saveEdit}
             onClick={(e) => e.stopPropagation()}
             className="card w-full max-w-lg space-y-4 p-6"
           >
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Edit category</h3>
-              <button type="button" onClick={() => setEditing(null)} aria-label="Close">
-                <X size={18} />
+              <h3 id="dept-modal-title" className="text-lg font-semibold">Edit category</h3>
+              <button type="button" onClick={() => setEditing(null)} aria-label="Close" data-testid="dept-modal-close">
+                <X size={18} aria-hidden />
               </button>
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <label className="mb-1 block text-xs font-medium">Name</label>
-                <input className={field} value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} />
+                <label htmlFor="dept-edit-name" className="mb-1 block text-xs font-medium">Name</label>
+                <input id="dept-edit-name" data-testid="dept-modal-name" className={field} value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium">Icon (emoji)</label>
-                <input className={field} value={editing.icon ?? ''} onChange={(e) => setEditing({ ...editing, icon: e.target.value })} />
+                <label htmlFor="dept-edit-icon" className="mb-1 block text-xs font-medium">Icon (emoji)</label>
+                <input id="dept-edit-icon" data-testid="dept-modal-icon" className={field} value={editing.icon ?? ''} onChange={(e) => setEditing({ ...editing, icon: e.target.value })} />
               </div>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium">Description</label>
-              <textarea className={field} rows={2} value={editing.description ?? ''} onChange={(e) => setEditing({ ...editing, description: e.target.value })} />
+              <label htmlFor="dept-edit-description" className="mb-1 block text-xs font-medium">Description</label>
+              <textarea id="dept-edit-description" data-testid="dept-modal-description" className={field} rows={2} value={editing.description ?? ''} onChange={(e) => setEditing({ ...editing, description: e.target.value })} />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium">Banner image</label>
               <ImageUploader folder="departments" value={editing.banner ?? ''} onChange={(u) => setEditing({ ...editing, banner: u })} />
             </div>
             <div className="flex justify-end">
-              <button disabled={loading} className="btn-primary">
-                <Save size={16} className="mr-1" /> Save
+              <button disabled={loading} data-testid="dept-modal-save" className="btn-primary">
+                <Save size={16} aria-hidden className="mr-1" /> Save
               </button>
             </div>
           </form>

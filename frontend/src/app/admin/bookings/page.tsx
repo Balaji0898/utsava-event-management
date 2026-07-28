@@ -66,8 +66,11 @@ export default function AdminBookings() {
       {loading ? (
         <TableSkeleton rows={6} cols={6} />
       ) : (
-      <div className="card overflow-x-auto">
-        <table className="w-full min-w-[720px] text-sm">
+      // tabIndex makes the horizontal scroll container reachable by keyboard (axe
+      // `scrollable-region-focusable`); without it the table cannot be scrolled
+      // without a pointer at narrow widths.
+      <div className="card overflow-x-auto" tabIndex={0} role="group" aria-label="Bookings table">
+        <table data-testid="booking-table" className="w-full min-w-[720px] text-sm">
           <thead className="border-b bg-[rgb(var(--muted))] text-left">
             <tr>
               <th className="px-5 py-3">Customer</th>
@@ -85,6 +88,7 @@ export default function AdminBookings() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: i * 0.03 }}
+                data-testid={`booking-row-${b.id}`}
                 className="border-b last:border-0"
               >
                 <td className="px-5 py-3">
@@ -101,7 +105,13 @@ export default function AdminBookings() {
                   {b.budget ? formatCurrency(Number(b.budget)) : '—'}
                 </td>
                 <td className="px-5 py-3">
-                  <span className={`rounded-full px-2 py-1 text-xs ${badge(b.status)}`}>
+                  {/* data-status carries the meaning that is otherwise encoded only in
+                      colour (WCAG 1.4.1), and gives tests a stable handle. */}
+                  <span
+                    data-testid={`booking-row-badge-${b.id}`}
+                    data-status={b.status}
+                    className={`rounded-full px-2 py-1 text-xs ${badge(b.status)}`}
+                  >
                     {b.status}
                   </span>
                 </td>
@@ -109,7 +119,9 @@ export default function AdminBookings() {
                   <select
                     value={b.status}
                     onChange={(e) => updateStatus(b.id, e.target.value)}
-                    className="rounded-lg border bg-[rgb(var(--card))] px-2 py-1 text-xs outline-none"
+                    data-testid={`booking-row-status-${b.id}`}
+                    aria-label={`Booking status for ${b.customerName}`}
+                    className="rounded-lg border bg-[rgb(var(--card))] px-2 py-1 text-xs outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
                   >
                     {STATUSES.map((s) => (
                       <option key={s} value={s}>
@@ -122,7 +134,11 @@ export default function AdminBookings() {
             ))}
             {items.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-5 py-8 text-center text-[rgb(var(--foreground))]/50">
+                <td
+                  colSpan={6}
+                  data-testid="booking-empty"
+                  className="px-5 py-8 text-center text-[rgb(var(--foreground))]/50"
+                >
                   No bookings yet.
                 </td>
               </tr>

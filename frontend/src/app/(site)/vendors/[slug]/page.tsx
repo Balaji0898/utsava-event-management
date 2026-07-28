@@ -44,7 +44,7 @@ export default async function VendorDetail({ params }: { params: { slug: string 
         <BackButton fallback="/vendors" label="Back to work" />
       </div>
       <Reveal>
-        <div className="card overflow-hidden">
+        <div className="card overflow-hidden" data-testid="vdetail-hero">
           <div className="relative h-64 overflow-hidden">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -58,13 +58,20 @@ export default async function VendorDetail({ params }: { params: { slug: string 
             <span className="text-sm font-medium text-accent">
               <Tr>{vendor.department?.name}</Tr>
             </span>
-            <h1 className="mt-1 flex items-center gap-2 text-3xl font-bold">
+            <h1 data-testid="vdetail-name" className="mt-1 flex items-center gap-2 text-3xl font-bold">
               {vendor.name}
-              {vendor.verified && <ShieldCheck className="text-accent" />}
+              {vendor.verified && (
+                <ShieldCheck
+                  role="img"
+                  aria-label="Verified vendor"
+                  data-testid="vdetail-verified"
+                  className="text-accent"
+                />
+              )}
             </h1>
             <div className="mt-3 flex flex-wrap gap-4 text-sm text-[rgb(var(--foreground))]/70">
-              <span className="flex items-center gap-1">
-                <Star size={14} className="fill-yellow-400 text-yellow-400" />
+              <span data-testid="vdetail-rating" className="flex items-center gap-1">
+                <Star size={14} aria-hidden className="fill-yellow-400 text-yellow-400" />
                 {vendor.rating} ({vendor.reviewCount} reviews)
               </span>
               {vendor.location && (
@@ -97,10 +104,11 @@ export default async function VendorDetail({ params }: { params: { slug: string 
       <h2 className="mt-14 text-2xl font-bold">
         <Tr>Packages</Tr>
       </h2>
-      <div className="mt-6 grid gap-6 md:grid-cols-3">
+      <div data-testid="vdetail-packages" className="mt-6 grid gap-6 md:grid-cols-3">
         {vendor.packages.map((p) => (
           <TiltCard
             key={p.id}
+            testId={`vdetail-package-${p.id}`}
             className={`card relative flex h-full flex-col p-6 ${
               p.popular ? 'ring-2 ring-brand-500' : ''
             }`}
@@ -138,7 +146,7 @@ export default async function VendorDetail({ params }: { params: { slug: string 
           <h2 className="mt-14 text-2xl font-bold">
             <Tr>Reviews</Tr>
           </h2>
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
+          <div data-testid="vdetail-reviews" className="mt-6 grid gap-4 md:grid-cols-2">
             {vendor.reviews.map((r) => (
               <div key={r.id} className="card p-5">
                 <div className="flex items-center gap-1">

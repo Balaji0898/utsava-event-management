@@ -1,5 +1,6 @@
 import { PrismaClient, Role, PriceUnit, CmsBlockType } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import { randomBytes } from 'crypto';
 import { seedOutdoorEvents } from './outdoor-events';
 
 const prisma = new PrismaClient();
@@ -199,19 +200,71 @@ async function seedFunctionHalls() {
   }
 }
 
+/** Generate a reasonably strong random password for the seeded admin. */
+function generatePassword(): string {
+  // 18 url-safe chars; avoids Math.random for a bit more entropy.
+  const bytes = randomBytes(18);
+  return bytes
+    .toString('base64')
+    .replace(/[+/=]/g, '')
+    .slice(0, 18)
+    .concat('!Aa1'); // guarantee complexity classes
+}
+
 async function main() {
   // ---- Super admin ----
-  const passwordHash = await bcrypt.hash('Admin@123', 10);
+  // Credentials come from the environment; if no password is provided a strong
+  // random one is generated and printed ONCE. No hardcoded default password is
+  // ever shipped (that would be a public, guessable admin login).
+  const adminEmail = process.env.SEED_ADMIN_EMAIL ?? 'admin@elite.events';
+  const envPassword = process.env.SEED_ADMIN_PASSWORD?.trim();
+  const adminPassword = envPassword && envPassword.length >= 8 ? envPassword : generatePassword();
+  const passwordHash = await bcrypt.hash(adminPassword, 10);
+
+  // Does the admin already exist? Checked BEFORE the upsert, because `update: {}` below makes the
+  // upsert itself indistinguishable from a no-op.
+  const existingAdmin = await prisma.user.findUnique({
+    where: { email: adminEmail },
+    select: { id: true },
+  });
+
   await prisma.user.upsert({
-    where: { email: 'admin@elite.events' },
+    where: { email: adminEmail },
+    // Deliberately a no-op: re-running the seed must never silently rotate a live credential.
+    // Use `npm run admin:rotate` to change an existing admin's password.
     update: {},
     create: {
       name: 'Super Admin',
-      email: 'admin@elite.events',
+      email: adminEmail,
       passwordHash,
       role: Role.SUPER_ADMIN,
     },
   });
+
+  if (existingAdmin) {
+    /**
+     * The footgun this closes: because `update: {}` only writes `passwordHash` on INSERT, an
+     * operator who sets SEED_ADMIN_PASSWORD and re-seeds an existing database previously got no
+     * password change AND no message — the log below was gated on `!envPassword`. They would walk
+     * away believing the credential was live when it was not.
+     *
+     * This matters for the C-2 remediation specifically: any environment seeded under the old code
+     * still holds the published `Admin@123` hash, and deploying the fix does not rotate it.
+     */
+    console.log(`\nℹ️  Admin ${adminEmail} already exists — its password was left unchanged.`);
+    if (envPassword) {
+      console.log(
+        '⚠️  SEED_ADMIN_PASSWORD was set but NOT applied: the seed never overwrites an existing\n' +
+          '⚠️  password. To change it, run:  NEW_ADMIN_PASSWORD=… npm run admin:rotate\n',
+      );
+    }
+  } else if (!envPassword) {
+    console.log(
+      `\n🔐 Seeded admin: ${adminEmail}\n🔐 Generated password (shown once — store it now): ${adminPassword}\n`,
+    );
+  } else {
+    console.log(`\n🔐 Seeded admin: ${adminEmail} (password taken from SEED_ADMIN_PASSWORD)\n`);
+  }
 
   for (const [i, d] of DEPARTMENTS.entries()) {
     const dept = await prisma.department.upsert({
@@ -417,7 +470,7 @@ async function main() {
     });
   }
 
-  console.log('✅ Seed complete. Login: admin@elite.events / Admin@123');
+  console.log('✅ Seed complete. Admin credentials were printed above (if generated).');
 }
 
 main()

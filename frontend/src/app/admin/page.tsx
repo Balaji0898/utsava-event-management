@@ -65,7 +65,7 @@ export default function AdminDashboard() {
       </div>
 
       {error && (
-        <div className="card mb-6 p-4 text-sm text-red-500">
+        <div role="alert" data-testid="dashboard-error" className="card mb-6 p-4 text-sm text-red-500">
           Could not load stats: {error}. Make sure the API is running and you are logged in.
         </div>
       )}
@@ -85,9 +85,11 @@ export default function AdminDashboard() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.08 }}
+                data-testid={`dashboard-stat-${c.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
                 className="card overflow-hidden p-6"
               >
                 <div
+                  aria-hidden
                   className={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${c.color} text-white`}
                 >
                   <c.icon size={20} />
@@ -103,6 +105,7 @@ export default function AdminDashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
+          data-testid="dashboard-revenue"
           className="card p-6 lg:col-span-2"
         >
           <div className="flex items-center gap-3">
@@ -116,8 +119,9 @@ export default function AdminDashboard() {
               </div>
             </div>
           </div>
-          {/* Simple animated bar chart */}
-          <div className="mt-8 flex h-40 items-end gap-3">
+          {/* Decorative only: these heights are hard-coded and bear no relation to any
+              data, so there is nothing for assistive tech to read here. */}
+          <div aria-hidden className="mt-8 flex h-40 items-end gap-3">
             {[40, 65, 45, 80, 55, 90, 70].map((h, i) => (
               <motion.div
                 key={i}
@@ -139,6 +143,7 @@ export default function AdminDashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
+          data-testid="dashboard-booking-status"
           className="card p-6"
         >
           <h3 className="font-semibold">Booking status</h3>

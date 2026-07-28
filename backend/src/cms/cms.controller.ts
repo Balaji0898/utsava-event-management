@@ -8,10 +8,15 @@ import {
   Post,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { Request } from 'express';
+import { Throttle } from '@nestjs/throttler';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CmsBlockType, Role } from '@prisma/client';
 import { CmsService } from './cms.service';
+import { isAdminRequest } from '../common/admin-request.util';
 import {
   CreateBlockDto,
   UpdateBlockDto,
@@ -30,13 +35,22 @@ import { Roles } from '../auth/decorators/roles.decorator';
 @ApiTags('cms')
 @Controller('cms')
 export class CmsController {
-  constructor(private readonly service: CmsService) {}
+  constructor(
+    private readonly service: CmsService,
+    private readonly jwt: JwtService,
+  ) {}
 
   // ---------- Blocks ----------
   @Public()
   @Get('blocks')
-  findBlocks(@Query('type') type?: CmsBlockType, @Query('all') all?: string) {
-    return this.service.findBlocks(type, all === 'true');
+  async findBlocks(
+    @Query('type') type?: CmsBlockType,
+    @Query('all') all?: string,
+    @Req() req?: Request,
+  ) {
+    // Inactive/draft blocks are only revealed to an authenticated admin.
+    const includeInactive = all === 'true' && (await isAdminRequest(req!, this.jwt));
+    return this.service.findBlocks(type, includeInactive);
   }
 
   @Public()
@@ -69,11 +83,15 @@ export class CmsController {
   // ---------- Testimonials ----------
   @Public()
   @Get('testimonials')
-  findTestimonials(@Query('all') all?: string) {
-    return this.service.findTestimonials(all === 'true');
+  async findTestimonials(@Query('all') all?: string, @Req() req?: Request) {
+    // Unapproved/inactive testimonials are only revealed to an authenticated admin.
+    const includeInactive = all === 'true' && (await isAdminRequest(req!, this.jwt));
+    return this.service.findTestimonials(includeInactive);
   }
 
   // Public end-user submission — created unapproved, hidden until an admin approves.
+  // Rate-limited to curb spam submissions.
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
   @Public()
   @Post('testimonials/submit')
   submitTestimonial(@Body() dto: SubmitTestimonialDto) {
@@ -104,8 +122,10 @@ export class CmsController {
   // ---------- FAQs ----------
   @Public()
   @Get('faqs')
-  findFaqs(@Query('all') all?: string) {
-    return this.service.findFaqs(all === 'true');
+  async findFaqs(@Query('all') all?: string, @Req() req?: Request) {
+    // Inactive FAQs are only revealed to an authenticated admin.
+    const includeInactive = all === 'true' && (await isAdminRequest(req!, this.jwt));
+    return this.service.findFaqs(includeInactive);
   }
 
   @ApiBearerAuth()

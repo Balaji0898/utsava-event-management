@@ -38,7 +38,13 @@ export class BookingsService {
   async findOne(id: string) {
     const booking = await this.prisma.booking.findUnique({
       where: { id },
-      include: { vendor: true, package: true, customer: true },
+      include: {
+        vendor: true,
+        package: true,
+        // Never select the full User row here — it carries passwordHash and the
+        // hashed refreshToken. Expose only the non-sensitive customer fields.
+        customer: { select: { id: true, name: true, email: true, phone: true, role: true } },
+      },
     });
     if (!booking) throw new NotFoundException('Booking not found');
     return booking;

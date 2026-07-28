@@ -47,7 +47,7 @@ export function Gallery({ images, name }: { images: string[]; name: string }) {
 
   return (
     <>
-      <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3">
+      <div data-testid="vdetail-gallery" className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3">
         {images.map((g, i) => (
           <button
             key={i}
@@ -128,7 +128,9 @@ export function Gallery({ images, name }: { images: string[]; name: string }) {
             />
 
             <div className="absolute bottom-5 left-1/2 -translate-x-1/2 rounded-full bg-black/50 px-3 py-1 text-xs text-white/80">
-              {index + 1} / {images.length}
+              <span data-testid="vdetail-lightbox-counter">
+                {index + 1} / {images.length}
+              </span>
             </div>
           </motion.div>
         )}

@@ -7,7 +7,8 @@ import { JwtService } from '@nestjs/jwt';
 import { Role } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
-import { LoginDto, RegisterDto } from './dto/auth.dto';
+import { LoginDto, RegisterDto, UpdateProfileDto } from './dto/auth.dto';
+import { requireSecret } from '../common/env.util';
 
 @Injectable()
 export class AuthService {
@@ -20,11 +21,11 @@ export class AuthService {
     const payload = { sub, email, role };
     const [accessToken, refreshToken] = await Promise.all([
       this.jwt.signAsync(payload, {
-        secret: process.env.JWT_ACCESS_SECRET,
+        secret: requireSecret('JWT_ACCESS_SECRET'),
         expiresIn: process.env.JWT_ACCESS_TTL ?? '900s',
       }),
       this.jwt.signAsync(payload, {
-        secret: process.env.JWT_REFRESH_SECRET,
+        secret: requireSecret('JWT_REFRESH_SECRET'),
         expiresIn: process.env.JWT_REFRESH_TTL ?? '7d',
       }),
     ]);
@@ -100,5 +101,36 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new UnauthorizedException();
     return this.sanitize(user);
+  }
+
+  /** DPDP right to correction — a user updates their own profile fields. */
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(dto.name !== undefined ? { name: dto.name } : {}),
+        ...(dto.phone !== undefined ? { phone: dto.phone } : {}),
+      },
+    });
+    return this.sanitize(user);
+  }
+
+  /**
+   * DPDP right to erasure — a user deletes their own account. Their bookings are
+   * anonymized (personal fields scrubbed, link severed) rather than kept intact,
+   * so no identifying data survives the deletion.
+   */
+  async deleteAccount(userId: string) {
+    await this.prisma.booking.updateMany({
+      where: { customerId: userId },
+      data: {
+        customerId: null,
+        customerName: 'Deleted user',
+        customerEmail: 'deleted@removed.invalid',
+        customerPhone: null,
+      },
+    });
+    await this.prisma.user.delete({ where: { id: userId } });
+    return { success: true };
   }
 }

@@ -39,8 +39,28 @@ The repo already includes the configs:
 ```bash
 npm run seed
 ```
-This creates the departments, vendors, Function Halls, testimonials, FAQs, and the admin user
-`admin@elite.events` / `Admin@123` (change this after first login).
+This creates the departments, vendors, Function Halls, testimonials, FAQs, and the admin user.
+Set `SEED_ADMIN_PASSWORD` (and optionally `SEED_ADMIN_EMAIL`) before seeding, or the script
+generates a strong random password and prints it **once** — copy it from the console.
+
+### Rotating the seeded admin password
+
+**The seed only ever sets a password when it CREATES the admin.** It upserts with `update: {}`, so
+re-running `npm run seed` against a database that already has an admin changes nothing — even if
+`SEED_ADMIN_PASSWORD` is set. (The seed now says so explicitly when it detects this.)
+
+That matters for one specific reason: earlier versions of this repo shipped a hardcoded
+`Admin@123` and published it in the README. **Any environment seeded before that was removed still
+has that password, and deploying the fix does not change it.** Rotate it explicitly:
+
+```bash
+# Render → your service → Shell
+NEW_ADMIN_PASSWORD='<a long, unique password>' npm run admin:rotate
+```
+
+The script updates the existing admin only — it never creates an account, refuses anything under
+12 characters, refuses the old published default, and revokes live sessions so the previous
+password cannot be refreshed into a new one. Clear the value from your shell history afterwards.
 
 > **Note on uploads:** Render's disk is ephemeral — locally-uploaded images are wiped on redeploy.
 > For production, set the `CLOUDINARY_*` vars above; the backend auto-switches to Cloudinary.
@@ -115,7 +135,9 @@ Then put a reverse proxy (Caddy/Nginx) in front for TLS. Frontend → :3000, API
 - [ ] Ran `npm run seed` once (departments, vendors, admin user exist)
 - [ ] `CORS_ORIGIN` on the backend = the exact Vercel URL (no trailing slash)
 - [ ] `NEXT_PUBLIC_API_URL` on Vercel = the exact API URL
-- [ ] Logged into `/login` with `admin@elite.events` / `Admin@123` and **changed the password/created a new admin**
+- [ ] Set a strong `SEED_ADMIN_PASSWORD` (or captured the generated one) and logged into `/login`
+- [ ] **Ran `NEW_ADMIN_PASSWORD='…' npm run admin:rotate`** — mandatory on any environment seeded before the hardcoded `Admin@123` was removed, since the seed will not rotate an existing admin
+- [ ] Set `REVALIDATE_SECRET` on Vercel — without it `POST /api/revalidate` returns 503 in production, and admin edits will not refresh the public pages
 - [ ] (Production) set `CLOUDINARY_*` so uploaded images persist
 - [ ] (Optional) add a custom domain in Vercel and update `CORS_ORIGIN`
 

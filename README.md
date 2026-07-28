@@ -22,7 +22,7 @@ GitHub hosts the **code**; to get **live URLs** deploy the backend+DB and the fr
 Then in Render set `CORS_ORIGIN` to your Vercel URL, and run `npm run seed` once (Render → Shell).
 You'll end up with:
 - **Website:** `https://<your-app>.vercel.app`
-- **Admin:** `https://<your-app>.vercel.app/admin` (login `admin@elite.events` / `Admin@123`)
+- **Admin:** `https://<your-app>.vercel.app/admin` (login with the seeded admin email + the password set/generated at seed time)
 - **API / Swagger:** `https://<your-api>.onrender.com/api` · `/docs`
 
 Full walkthrough: **[DEPLOYMENT.md](./DEPLOYMENT.md)**.
@@ -88,9 +88,11 @@ npm run seed                  # seed admin + demo data
 npm run start:dev             # http://localhost:4000  (Swagger at /docs)
 ```
 
-Default seeded super admin:
-- **email:** `admin@elite.events`
-- **password:** `Admin@123`
+Seeded super admin:
+- **email:** `admin@elite.events` (override with `SEED_ADMIN_EMAIL`)
+- **password:** set `SEED_ADMIN_PASSWORD` before seeding, or the seed script
+  generates a strong random password and prints it **once** in the console —
+  copy it then. No default password is shipped.
 
 ### 3. Frontend
 ```bash

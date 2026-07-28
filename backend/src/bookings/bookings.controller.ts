@@ -7,6 +7,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { BookingStatus, Role } from '@prisma/client';
 import { BookingsService } from './bookings.service';
@@ -21,6 +22,8 @@ export class BookingsController {
   constructor(private readonly service: BookingsService) {}
 
   // Anyone can submit a booking enquiry (guest checkout supported).
+  // Rate-limited to curb unauthenticated spam / PII flooding.
+  @Throttle({ default: { ttl: 60_000, limit: 8 } })
   @Public()
   @Post()
   create(@Body() dto: CreateBookingDto, @CurrentUser('id') userId?: string) {

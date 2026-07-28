@@ -17,6 +17,34 @@ export interface VendorQuery {
   sort?: 'newest' | 'popular' | 'priceAsc' | 'priceDesc';
   page?: number;
   limit?: number;
+  lat?: number;
+  lng?: number;
+  radius?: number; // km
+}
+
+/** Great-circle distance between two lat/lng points, in km (Haversine). */
+function distanceKm(aLat: number, aLng: number, bLat: number, bLng: number): number {
+  const R = 6371;
+  const dLat = ((bLat - aLat) * Math.PI) / 180;
+  const dLng = ((bLng - aLng) * Math.PI) / 180;
+  const s =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((aLat * Math.PI) / 180) *
+      Math.cos((bLat * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
+
+/**
+ * Case-insensitive city matching for the `availableCities` string[] (Prisma
+ * array `has`/`hasSome` are exact-case): match common casings of the query
+ * (as-is, lower, UPPER, Title Case) so a reverse-geocoded "Hyderabad" still
+ * finds a stored "hyderabad".
+ */
+function cityVariants(city: string): string[] {
+  const c = city.trim();
+  const title = c.replace(/\b\w/g, (m) => m.toUpperCase());
+  return Array.from(new Set([c, c.toLowerCase(), c.toUpperCase(), title]));
 }
 
 @Injectable()
@@ -41,7 +69,7 @@ export class VendorsService {
     const where: Prisma.VendorWhereInput = {
       status: 'ACTIVE',
       ...(q.departmentId ? { departmentId: q.departmentId } : {}),
-      ...(q.city ? { availableCities: { has: q.city } } : {}),
+      ...(q.city ? { availableCities: { hasSome: cityVariants(q.city) } } : {}),
       ...(q.featured ? { featured: true } : {}),
       ...(q.trending ? { trending: true } : {}),
       ...(q.verified ? { verified: true } : {}),
@@ -68,13 +96,40 @@ export class VendorsService {
             ? { priceFrom: 'desc' }
             : { createdAt: 'desc' };
 
+    const include = { department: true, packages: { orderBy: { sortOrder: 'asc' as const } } };
+
+    // "Near me": when coordinates are provided, return only vendors that have
+    // coordinates within `radius` km, sorted by distance (Haversine in JS —
+    // Prisma has no geo). Paginated in memory (dataset is small). The caller
+    // falls back to the unfiltered list when this comes back empty.
+    if (q.lat != null && q.lng != null) {
+      const radius = q.radius && q.radius > 0 ? q.radius : 50;
+      const candidates = await this.prisma.vendor.findMany({
+        where: { ...where, latitude: { not: null }, longitude: { not: null } },
+        include,
+        take: 500,
+      });
+      const withinRadius = candidates
+        .map((v) => ({
+          v,
+          dist: distanceKm(q.lat!, q.lng!, v.latitude as number, v.longitude as number),
+        }))
+        .filter((x) => x.dist <= radius)
+        .sort((a, b) => a.dist - b.dist);
+      const total = withinRadius.length;
+      const data = withinRadius
+        .slice((page - 1) * limit, page * limit)
+        .map((x) => x.v);
+      return { data, total, page, limit, pages: Math.ceil(total / limit) };
+    }
+
     const [data, total] = await Promise.all([
       this.prisma.vendor.findMany({
         where,
         orderBy,
         skip: (page - 1) * limit,
         take: limit,
-        include: { department: true, packages: { orderBy: { sortOrder: 'asc' } } },
+        include,
       }),
       this.prisma.vendor.count({ where }),
     ]);

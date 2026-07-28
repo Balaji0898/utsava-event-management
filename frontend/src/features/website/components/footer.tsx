@@ -13,7 +13,7 @@ export function Footer() {
   const { t } = useI18n();
   const contact = useSiteContact();
   return (
-    <footer className="mt-24 border-t hex-pattern">
+    <footer data-testid="footer-root" className="mt-24 border-t hex-pattern">
       <div className="container-page grid gap-10 py-16 md:grid-cols-4">
         <div className="md:col-span-1">
           <Logo />
@@ -49,17 +49,25 @@ export function Footer() {
             <div className="text-xs text-accent">
               <Tr>{contact.role}</Tr>
             </div>
-            <a href={telHref(contact.phone)} className="mt-3 flex items-center gap-2 hover:text-[rgb(var(--accent))]">
-              <Phone size={15} /> {contact.phoneDisplay}
+            <a
+              href={telHref(contact.phone)}
+              data-testid="footer-phone"
+              className="mt-3 flex items-center gap-2 hover:text-[rgb(var(--accent))]"
+            >
+              <Phone size={15} aria-hidden /> {contact.phoneDisplay}
             </a>
-            <a href={whatsappHref(contact.whatsapp)} target="_blank" className="mt-2 flex items-center gap-2 hover:text-[rgb(var(--accent))]">
-              <MessageCircle size={15} /> <Tr>WhatsApp</Tr>
+            <a href={whatsappHref(contact.whatsapp)} target="_blank" rel="noopener noreferrer" className="mt-2 flex items-center gap-2 hover:text-[rgb(var(--accent))]">
+              <MessageCircle size={15} aria-hidden /> <Tr>WhatsApp</Tr>
             </a>
-            <a href={mailHref(contact.email)} className="mt-2 flex items-center gap-2 hover:text-[rgb(var(--accent))]">
-              <Mail size={15} /> {contact.email}
+            <a
+              href={mailHref(contact.email)}
+              data-testid="footer-email"
+              className="mt-2 flex items-center gap-2 hover:text-[rgb(var(--accent))]"
+            >
+              <Mail size={15} aria-hidden /> {contact.email}
             </a>
             <div className="mt-2 flex items-center gap-2">
-              <MapPin size={15} /> <Tr>Bengaluru · Hyderabad · Chennai</Tr>
+              <MapPin size={15} aria-hidden /> <Tr>Bengaluru · Hyderabad · Chennai</Tr>
             </div>
           </div>
         </div>

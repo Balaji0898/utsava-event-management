@@ -15,9 +15,9 @@ export class RegisterDto {
   @IsString()
   phone?: string;
 
-  @ApiProperty({ minLength: 6 })
+  @ApiProperty({ minLength: 8 })
   @IsString()
-  @MinLength(6)
+  @MinLength(8, { message: 'Password must be at least 8 characters' })
   password: string;
 }
 
@@ -29,4 +29,17 @@ export class LoginDto {
   @ApiProperty()
   @IsString()
   password: string;
+}
+
+/** Self-service profile update (DPDP right to correction). */
+export class UpdateProfileDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  phone?: string;
 }

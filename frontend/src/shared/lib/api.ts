@@ -1,4 +1,23 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+// Backend origin used ONLY server-side (RSC / route handlers). Prefer a
+// server-only var so it isn't shipped to the browser; fall back to the existing
+// public var so current deployments keep working.
+const BACKEND_URL =
+  process.env.BACKEND_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+
+// Same-origin path the browser hits; Next rewrites it to the backend server-side
+// (see next.config.mjs). The backend origin never appears in a browser request.
+const CLIENT_PROXY_BASE = '/api/backend';
+
+/**
+ * Resolve the URL for an API call. In the browser we go through the same-origin
+ * reverse proxy (no CORS, backend host hidden); on the server we call the
+ * backend directly. `path` starts with "/" (e.g. "/vendors").
+ */
+export function apiUrl(path: string): string {
+  return typeof window === 'undefined'
+    ? `${BACKEND_URL}/api${path}`
+    : `${CLIENT_PROXY_BASE}${path}`;
+}
 
 /**
  * Cache tags for public content. Each cached response is stored under one of
@@ -32,7 +51,7 @@ async function doRefresh(): Promise<boolean> {
   const refreshToken = getRefreshToken();
   if (!refreshToken) return false;
   try {
-    const res = await fetch(`${API_URL}/api/auth/refresh`, {
+    const res = await fetch(apiUrl('/auth/refresh'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -111,7 +130,7 @@ export async function api<T = any>(
   const { auth: useAuth, headers, ...rest } = options;
   const token = useAuth ? getToken() : null;
 
-  const res = await fetch(`${API_URL}/api${path}`, {
+  const res = await fetch(apiUrl(path), {
     ...rest,
     headers: {
       'Content-Type': 'application/json',
@@ -137,8 +156,8 @@ export async function api<T = any>(
   }
 
   if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.message ?? `Request failed (${res.status})`);
+    const body = await parseJsonSafe(res);
+    throw new Error(body?.message ?? `Request failed (${res.status})`);
   }
 
   // A successful admin create/update/delete means the underlying public data
@@ -146,7 +165,22 @@ export async function api<T = any>(
   // instead of waiting for the time-based fallback. Fire-and-forget.
   bustCacheAfterMutation(path, rest.method, token);
 
-  return res.json();
+  return parseJsonSafe(res) as Promise<T>;
+}
+
+/**
+ * Parse a response body as JSON, tolerating an EMPTY body. NestJS serializes a
+ * `null`/`undefined`/void return as a zero-length body, and `res.json()` would
+ * then throw "Unexpected end of JSON input". Returns null for an empty body.
+ */
+async function parseJsonSafe(res: Response): Promise<any> {
+  const text = await res.text();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
 }
 
 // Server-side helper (no auth token; used by RSC for public data).
@@ -207,7 +241,7 @@ async function fetchJsonOrThrow<T>(
         }
         throw new Error(`Request failed (${res.status})`);
       }
-      return (await res.json()) as T;
+      return (await parseJsonSafe(res)) as T;
     } catch (err) {
       lastErr = err;
       if (attempt < retries) continue;
@@ -223,7 +257,8 @@ export async function serverApi<T = any>(
   path: string,
   { revalidate = 300, tags = [], timeoutMs = 10000, retries = 2 }: ServerApiOptions = {},
 ): Promise<T | null> {
-  const url = `${API_URL}/api${path}`;
+  // Server-side: call the backend directly (never through the browser proxy).
+  const url = apiUrl(path);
   // Cache the successful result across requests, keyed by path, under `tags`.
   const getCached = unstable_cache(
     () => fetchJsonOrThrow<T>(url, timeoutMs, retries),
@@ -269,7 +304,7 @@ export const auth = {
     // so it never triggers the auto-refresh/redirect logic above).
     if (token) {
       try {
-        await fetch(`${API_URL}/api/auth/logout`, {
+        await fetch(apiUrl('/auth/logout'), {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
         });

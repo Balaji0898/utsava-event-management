@@ -69,8 +69,8 @@ export default function AdminVendors() {
             Edit every detail — work, gallery, contact and pricing.
           </p>
         </div>
-        <Link href="/admin/vendors/new" className="btn-primary">
-          <Plus size={16} className="mr-1" /> Add vendor
+        <Link href="/admin/vendors/new" className="btn-primary" data-testid="vend-add">
+          <Plus size={16} aria-hidden className="mr-1" /> Add vendor
         </Link>
       </div>
 
@@ -79,8 +79,9 @@ export default function AdminVendors() {
       {loading ? (
         <TableSkeleton rows={6} cols={7} />
       ) : (
-      <div className="card overflow-x-auto">
-        <table className="w-full min-w-[720px] text-sm">
+      // tabIndex: see the bookings table — keyboard-scrollable region.
+      <div className="card overflow-x-auto" tabIndex={0} role="group" aria-label="Vendors table">
+        <table data-testid="vend-table" className="w-full min-w-[720px] text-sm">
           <thead className="border-b bg-[rgb(var(--muted))] text-left">
             <tr>
               <th className="px-5 py-3">Vendor</th>
@@ -99,6 +100,7 @@ export default function AdminVendors() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: i * 0.03 }}
+                data-testid={`vend-row-${v.id}`}
                 className="border-b last:border-0"
               >
                 <td className="px-5 py-3 font-medium">
@@ -126,16 +128,18 @@ export default function AdminVendors() {
                     <Link
                       href={`/admin/vendors/${v.id}`}
                       className="rounded-lg border p-2 hover:bg-[rgb(var(--muted))]"
-                      aria-label="Edit"
+                      aria-label={`Edit ${v.name}`}
+                      data-testid={`vend-row-edit-${v.id}`}
                     >
-                      <Pencil size={15} />
+                      <Pencil size={15} aria-hidden />
                     </Link>
                     <button
                       onClick={() => remove(v.id)}
                       className="rounded-lg border border-red-500/30 p-2 text-red-500 hover:bg-red-500/10"
-                      aria-label="Delete"
+                      aria-label={`Delete ${v.name}`}
+                      data-testid={`vend-row-delete-${v.id}`}
                     >
-                      <Trash2 size={15} />
+                      <Trash2 size={15} aria-hidden />
                     </button>
                   </div>
                 </td>
@@ -143,7 +147,11 @@ export default function AdminVendors() {
             ))}
             {items.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-5 py-8 text-center text-[rgb(var(--foreground))]/50">
+                <td
+                  colSpan={7}
+                  data-testid="vend-empty"
+                  className="px-5 py-8 text-center text-[rgb(var(--foreground))]/50"
+                >
                   No vendors yet. Click “Add vendor”.
                 </td>
               </tr>
@@ -153,7 +161,11 @@ export default function AdminVendors() {
       </div>
       )}
 
-      {!loading && <Pagination page={page} pages={pages} onChange={setPage} />}
+      {!loading && (
+        <div data-testid="vend-pagination">
+          <Pagination page={page} pages={pages} onChange={setPage} />
+        </div>
+      )}
     </div>
   );
 }

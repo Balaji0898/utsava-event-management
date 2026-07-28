@@ -6,3 +6,14 @@ out
 .env.local
 *.log
 .DS_Store
+
+# E2E suite (e2e/) — generated artifacts.
+# Visual baselines under e2e/tests/**/__screenshots__/ ARE committed: they are the reference
+# images, regenerated on a Linux runner by .github/workflows/e2e-visual-baselines.yml.
+e2e/test-results/
+e2e/playwright-report/
+e2e/blob-report/
+e2e/all-blob-reports/
+e2e/playwright/.cache/
+# Holds a live access + refresh token pair for the seeded admin.
+e2e/playwright/.auth/

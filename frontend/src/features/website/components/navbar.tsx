@@ -41,8 +41,8 @@ export function Navbar() {
         scrolled ? 'border-b glass shadow-sm' : 'bg-transparent'
       }`}
     >
-      <nav className="container-page flex h-20 items-center justify-between">
-        <Link href="/" aria-label="Utsava home">
+      <nav data-testid="nav-root" className="container-page flex h-20 items-center justify-between">
+        <Link href="/" aria-label="Utsava home" data-testid="nav-logo">
           <Logo />
         </Link>
 
@@ -76,22 +76,27 @@ export function Navbar() {
           <LanguageToggle />
           <ThemeToggle />
           <Magnetic className="hidden md:block">
-            <Link href="/book" className="btn-dark">
+            <Link href="/book" className="btn-dark" data-testid="nav-book-now">
               {t('nav.bookNow')}
             </Link>
           </Magnetic>
           <button
             className="md:hidden"
             aria-label="Menu"
+            aria-expanded={open}
+            aria-controls="nav-mobile-menu"
+            data-testid="nav-mobile-toggle"
             onClick={() => setOpen((v) => !v)}
           >
-            {open ? <X /> : <Menu />}
+            {open ? <X aria-hidden /> : <Menu aria-hidden />}
           </button>
         </div>
       </nav>
 
       {open && (
         <motion.div
+          id="nav-mobile-menu"
+          data-testid="nav-mobile-menu"
           initial={{ height: 0, opacity: 0 }}
           animate={{ height: 'auto', opacity: 1 }}
           className="border-t glass md:hidden"

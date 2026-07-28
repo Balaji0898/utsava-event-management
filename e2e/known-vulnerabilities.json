@@ -1,0 +1,50 @@
+{
+  "_comment": [
+    "Security-debt ratchet for the E2E suite.",
+    "",
+    "`baseline` is the number of cases carrying a `known-vulnerability` annotation — each one",
+    "asserts the SECURE expectation and is wrapped in test.fail() (or annotated where the control",
+    "is infrastructural). scripts/generate-e2e-report.js fails CI when the live count EXCEEDS this",
+    "number, so a new vulnerability cannot land silently.",
+    "",
+    "Enforced only when E2E_ENFORCE_RATCHET=1, which the CI report job sets after merging every",
+    "shard. A partial run sees a fraction of the total, so comparing it would be meaningless.",
+    "",
+    "Lowering the baseline is always welcome and should happen in the same PR as the fix.",
+    "Raising it needs a justification in the commit message."
+  ],
+  "baseline": 5,
+  "register": {
+    "SEC-17": {
+      "finding": "M-2 — no script-src CSP on the frontend. The only CSP set is frame-ancestors, which does nothing against XSS.",
+      "impact": "Combined with H-1 (bypassable sanitizer) and M-3 (tokens in localStorage), a surviving payload can exfiltrate an admin session.",
+      "owner": "frontend",
+      "retiredBy": "Add a real script-src/default-src policy in frontend/next.config.mjs headers()."
+    },
+    "SEC-21": {
+      "finding": "M-3 — access and refresh tokens are stored in localStorage, readable by any script on the page.",
+      "impact": "Turns any XSS from defacement into full account takeover.",
+      "owner": "frontend",
+      "retiredBy": "Move the session to httpOnly, Secure, SameSite cookies in shared/lib/api.ts + the auth controller."
+    },
+    "SEC-25": {
+      "finding": "Rate limits key on X-Forwarded-For via the hardcoded `trust proxy: 1`.",
+      "impact": "CORRECT on Render/Railway, whose edges append the real client IP as the rightmost entry — which is what proxy-addr resolves req.ip to, so a spoofed header is ignored there. Exposed only where the hop count differs from 1: the self-host path if :4000 stays publicly reachable or the reverse proxy replaces rather than appends the header, and any future CDN in front (2 hops vs the hardcoded 1).",
+      "owner": "platform",
+      "note": "Annotated but NOT test.fail() — this suite depends on the no-proxy behaviour for per-worker parallelism, and the control is infrastructural. An earlier version of this entry overstated the risk as a straightforward bypass on Render; that was wrong.",
+      "retiredBy": "Make the hop count environment-driven rather than hardcoded in main.ts:16, firewall :4000 on the self-host path, and key the login throttle on email+IP so credential stuffing cannot be spread across rotated IPs at all."
+    },
+    "VDETAIL-A-01": {
+      "finding": "A11Y — the gallery lightbox declares aria-modal=\"true\" without trapping focus.",
+      "impact": "Tab escapes to the page behind the dialog (WCAG 2.4.3), which is exactly the confusion aria-modal is meant to prevent.",
+      "owner": "frontend",
+      "retiredBy": "Implement focus containment in features/website/components/gallery.tsx."
+    },
+    "A11Y-A-16": {
+      "finding": "A11Y — the departments edit modal declares aria-modal=\"true\" without trapping focus.",
+      "impact": "Same as VDETAIL-A-01. Arguably introduced by adding the role without the behaviour it promises.",
+      "owner": "frontend",
+      "retiredBy": "Implement focus containment in app/admin/departments/page.tsx."
+    }
+  }
+}

@@ -24,8 +24,10 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-elite}:${POSTGRES_PASSWORD:-elite_secret}@db:5432/${POSTGRES_DB:-elite_events}?schema=public
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-change_me_access_secret}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change_me_refresh_secret}
+      # No insecure defaults — compose errors out if these aren't provided
+      # (the backend also fails closed on missing/placeholder secrets).
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?set a strong random JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?set a strong random JWT_REFRESH_SECRET}
       JWT_ACCESS_TTL: ${JWT_ACCESS_TTL:-900s}
       JWT_REFRESH_TTL: ${JWT_REFRESH_TTL:-7d}
       PORT: 4000

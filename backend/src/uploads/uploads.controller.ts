@@ -55,7 +55,9 @@ export class UploadsController {
       new ParseFilePipe({
         validators: [
           new MaxFileSizeValidator({ maxSize: 8 * 1024 * 1024 }),
-          new FileTypeValidator({ fileType: /^(image\/(png|jpe?g|webp|gif|svg\+xml))$/ }),
+          // Raster images only. SVG is intentionally excluded — it can carry
+          // <script> and would be a stored-XSS vector when served from /uploads.
+          new FileTypeValidator({ fileType: /^image\/(png|jpe?g|webp|gif)$/ }),
         ],
       }),
     )
@@ -68,7 +70,7 @@ export class UploadsController {
     // backend (proxy-aware), so locally-stored files resolve to THIS server —
     // not whatever APP_URL happens to be set to. Fixes uploads 404'ing when
     // APP_URL points at the frontend domain.
-    return this.service.upload(file, folder ?? 'general', baseUrlFromRequest(req));
+    return this.service.upload(file, safeFolder(folder), baseUrlFromRequest(req));
   }
 
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
@@ -82,6 +84,17 @@ export class UploadsController {
   remove(@Param('id') id: string) {
     return this.service.remove(id);
   }
+}
+
+/**
+ * Sanitize the client-supplied `folder` so it can never escape the upload root.
+ * Only a single simple path segment is allowed; anything with separators, `..`,
+ * or unexpected characters falls back to "general".
+ */
+function safeFolder(folder?: string): string {
+  if (!folder) return 'general';
+  const trimmed = folder.trim();
+  return /^[a-z0-9_-]{1,40}$/i.test(trimmed) ? trimmed : 'general';
 }
 
 /**

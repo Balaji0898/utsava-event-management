@@ -73,31 +73,61 @@ export default function LoginPage() {
           Sign in to the admin dashboard.
         </p>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="mt-6 space-y-4"
+          data-testid="login-form"
+        >
           <div>
-            <label className="text-sm font-medium">Email</label>
-            <input className={field} type="email" {...register('email')} />
+            <label htmlFor="login-email" className="text-sm font-medium">
+              Email
+            </label>
+            <input
+              id="login-email"
+              data-testid="login-email"
+              className={field}
+              type="email"
+              autoComplete="email"
+              aria-invalid={errors.email ? true : undefined}
+              aria-describedby={errors.email ? 'login-email-error' : undefined}
+              {...register('email')}
+            />
             {errors.email && (
-              <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>
+              <p id="login-email-error" className="mt-1 text-xs text-red-500">
+                {errors.email.message}
+              </p>
             )}
           </div>
           <div>
-            <label className="text-sm font-medium">Password</label>
-            <input className={field} type="password" {...register('password')} />
+            <label htmlFor="login-password" className="text-sm font-medium">
+              Password
+            </label>
+            <input
+              id="login-password"
+              data-testid="login-password"
+              className={field}
+              type="password"
+              autoComplete="current-password"
+              aria-invalid={errors.password ? true : undefined}
+              aria-describedby={errors.password ? 'login-password-error' : undefined}
+              {...register('password')}
+            />
             {errors.password && (
-              <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>
+              <p id="login-password-error" className="mt-1 text-xs text-red-500">
+                {errors.password.message}
+              </p>
             )}
           </div>
-          {error && <p className="text-sm text-red-500">{error}</p>}
-          <button disabled={isSubmitting} className="btn-primary w-full">
+          {error && (
+            <p role="alert" data-testid="login-error" className="text-sm text-red-500">
+              {error}
+            </p>
+          )}
+          <button disabled={isSubmitting} data-testid="login-submit" className="btn-primary w-full">
             {isSubmitting && <Loader2 size={16} className="mr-2 animate-spin" />}
             {isSubmitting ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
-
-        <p className="mt-4 rounded-lg bg-[rgb(var(--muted))] p-3 text-xs text-[rgb(var(--foreground))]/60">
-          Demo: <b>admin@elite.events</b> / <b>Admin@123</b>
-        </p>
       </motion.div>
     </div>
   );

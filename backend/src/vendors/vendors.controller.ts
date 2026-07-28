@@ -35,6 +35,9 @@ export class VendorsController {
     @Query('sort') sort?: 'newest' | 'popular' | 'priceAsc' | 'priceDesc',
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('lat') lat?: string,
+    @Query('lng') lng?: string,
+    @Query('radius') radius?: string,
   ) {
     return this.service.findAll({
       departmentId,
@@ -49,6 +52,9 @@ export class VendorsController {
       sort,
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
+      lat: lat ? Number(lat) : undefined,
+      lng: lng ? Number(lng) : undefined,
+      radius: radius ? Number(radius) : undefined,
     });
   }
 

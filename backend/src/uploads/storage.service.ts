@@ -1,8 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { MediaProvider } from '@prisma/client';
 import { promises as fs } from 'fs';
-import { join, extname } from 'path';
+import { join } from 'path';
 import { randomBytes } from 'crypto';
+
+/** Allowed image MIME types → canonical file extension. */
+const MIME_EXT: Record<string, string> = {
+  'image/png': '.png',
+  'image/jpeg': '.jpg',
+  'image/jpg': '.jpg',
+  'image/webp': '.webp',
+  'image/gif': '.gif',
+};
 
 export interface StoredFile {
   url: string;
@@ -30,8 +39,13 @@ export class StorageService {
     );
   }
 
-  private safeName(original: string): string {
-    const ext = extname(original).toLowerCase();
+  /**
+   * Build a random filename with an extension derived from the (validated) MIME
+   * type — never from the client-supplied filename, which could inject a
+   * dangerous extension like `.html`.
+   */
+  private safeName(mimeType: string): string {
+    const ext = MIME_EXT[mimeType?.toLowerCase()] ?? '.bin';
     return `${Date.now()}-${randomBytes(6).toString('hex')}${ext}`;
   }
 
@@ -73,7 +87,7 @@ export class StorageService {
   ): Promise<StoredFile> {
     const dir = join(this.uploadDir, folder);
     await fs.mkdir(dir, { recursive: true });
-    const filename = this.safeName(file.originalname);
+    const filename = this.safeName(file.mimetype);
     await fs.writeFile(join(dir, filename), file.buffer);
     // Prefer the request-derived base URL (the host that served the upload);
     // fall back to APP_URL, then localhost.

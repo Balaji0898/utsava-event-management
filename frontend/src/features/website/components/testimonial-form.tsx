@@ -52,14 +52,16 @@ export function TestimonialForm() {
         className="card mx-auto mt-10 flex max-w-xl flex-col items-center gap-3 p-8 text-center"
       >
         <CheckCircle2 className="text-emerald-500" size={40} />
-        <h3 className="font-display text-2xl font-bold">{t('reviewForm.thanksTitle')}</h3>
+        <h3 className="font-display text-2xl font-bold" data-testid="review-success">
+          {t('reviewForm.thanksTitle')}
+        </h3>
         <p className="text-sm text-[rgb(var(--foreground))]/60">{t('reviewForm.thanksBody')}</p>
       </motion.div>
     );
   }
 
   return (
-    <form onSubmit={submit} className="card mx-auto mt-10 max-w-xl space-y-4 p-6 sm:p-8">
+    <form onSubmit={submit} data-testid="review-form" className="card mx-auto mt-10 max-w-xl space-y-4 p-6 sm:p-8">
       <div className="text-center">
         <h3 className="font-display text-2xl font-bold">{t('reviewForm.title')}</h3>
         <p className="mt-1 text-sm text-[rgb(var(--foreground))]/60">{t('reviewForm.subtitle')}</p>
@@ -68,6 +70,8 @@ export function TestimonialForm() {
       <div className="grid gap-4 sm:grid-cols-2">
         <input
           className={field}
+          aria-label={t('reviewForm.name')}
+          data-testid="review-name"
           placeholder={t('reviewForm.name')}
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -75,6 +79,8 @@ export function TestimonialForm() {
         />
         <input
           className={field}
+          aria-label={t('reviewForm.role')}
+          data-testid="review-role"
           placeholder={t('reviewForm.role')}
           value={role}
           onChange={(e) => setRole(e.target.value)}
@@ -90,6 +96,7 @@ export function TestimonialForm() {
               key={s}
               type="button"
               aria-label={`${s} star${s > 1 ? 's' : ''}`}
+              data-testid={`review-star-${s}`}
               onClick={() => setRating(s)}
               onMouseEnter={() => setHover(s)}
               onMouseLeave={() => setHover(0)}
@@ -111,16 +118,26 @@ export function TestimonialForm() {
       <textarea
         className={field}
         rows={4}
+        aria-label={t('reviewForm.message')}
+        data-testid="review-message"
         placeholder={t('reviewForm.message')}
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         required
       />
 
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {error && (
+        <p role="alert" data-testid="review-error" className="text-sm text-red-500">
+          {error}
+        </p>
+      )}
 
-      <button className="btn-primary w-full justify-center" disabled={status === 'sending'}>
-        <Send size={16} className="mr-2" />
+      <button
+        className="btn-primary w-full justify-center"
+        disabled={status === 'sending'}
+        data-testid="review-submit"
+      >
+        <Send size={16} aria-hidden className="mr-2" />
         {status === 'sending' ? t('reviewForm.sending') : t('reviewForm.submit')}
       </button>
     </form>

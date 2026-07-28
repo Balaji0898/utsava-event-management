@@ -89,7 +89,9 @@
     "submit": "Submit booking",
     "submitting": "Submitting…",
     "successTitle": "Booking received!",
-    "successBody": "Our team will reach out to you shortly to confirm the details."
+    "successBody": "Our team will reach out to you shortly to confirm the details.",
+    "consent": "I agree to the processing of my personal details for this enquiry, as described in the",
+    "privacyPolicy": "privacy policy"
   },
   "footer": {
     "tagline": "Where every moment becomes a festival — premium event management for weddings, celebrations and corporate events.",
@@ -118,5 +120,12 @@
     "thanksTitle": "Thank you!",
     "thanksBody": "Your review has been submitted and will appear once approved.",
     "ratingRequired": "Please select a star rating."
+  },
+  "location": {
+    "useMy": "Use my current location",
+    "nearMe": "Near me",
+    "locating": "Locating…",
+    "denied": "Location permission denied — enter your city manually.",
+    "unavailable": "Couldn't detect your location — enter your city manually."
   }
 }

@@ -59,7 +59,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             U
           </span>
         </div>
-        <p className="relative font-display text-sm tracking-wide text-[rgb(var(--foreground))]/60">
+        <p
+          role="status"
+          data-testid="admin-loading"
+          className="relative font-display text-sm tracking-wide text-[rgb(var(--foreground))]/60"
+        >
           Loading Utsava dashboard…
         </p>
       </div>
@@ -67,20 +71,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen" data-testid="admin-shell">
       <Sidebar />
       <div className="flex-1">
         <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b px-6 glass">
           <div className="flex items-center gap-3">
             {isSubPage && <BackButton fallback="/admin" label="Back" className="hidden sm:inline-flex" />}
-            <div className="pointer-events-none h-11 w-11 shrink-0">
+            {/* Decorative WebGL gem — no text alternative to give, so hide it from AT. */}
+            <div aria-hidden className="pointer-events-none h-11 w-11 shrink-0">
               <Hero3D />
             </div>
             <h1 className="font-display font-semibold">Admin Dashboard</h1>
           </div>
           <ThemeToggle />
         </header>
-        <div className="p-6">{children}</div>
+        {/* A real landmark, so the dashboard content is reachable by region navigation
+            (axe `region`) rather than being an unlabelled div. */}
+        <main className="p-6">{children}</main>
       </div>
     </div>
   );

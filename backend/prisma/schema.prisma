@@ -159,6 +159,8 @@ model Vendor {
   description    String?
   experience     Int       @default(0) // years
   location       String?
+  latitude       Float?    // for "near me" proximity search
+  longitude      Float?
   availableCities String[] @default([])
   rating         Float     @default(0)
   reviewCount    Int       @default(0)

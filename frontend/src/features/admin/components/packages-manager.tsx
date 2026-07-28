@@ -67,14 +67,16 @@ export function PackagesManager({ vendorId }: { vendorId: string }) {
   }
 
   return (
-    <div className="card p-6">
+    <div className="card p-6" data-testid="pkg-manager">
       <h3 className="mb-4 font-display text-lg font-semibold">Packages (pricing tiers)</h3>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <form onSubmit={create} className="space-y-3 rounded-2xl border p-4">
-          <input className={inputCls} placeholder="Package name (e.g. Premium)" value={name} onChange={(e) => setName(e.target.value)} />
-          <input className={inputCls} type="number" placeholder="Price (₹)" value={price} onChange={(e) => setPrice(e.target.value)} />
+        <form onSubmit={create} data-testid="pkg-create-form" className="space-y-3 rounded-2xl border p-4">
+          <input aria-label="Package name" data-testid="pkg-name" className={inputCls} placeholder="Package name (e.g. Premium)" value={name} onChange={(e) => setName(e.target.value)} />
+          <input aria-label="Package price in rupees" data-testid="pkg-price" className={inputCls} type="number" placeholder="Price (₹)" value={price} onChange={(e) => setPrice(e.target.value)} />
           <textarea
+            aria-label="Features, one per line"
+            data-testid="pkg-features"
             className={inputCls}
             rows={4}
             placeholder={'Features (one per line)\n2 Photographers\nDrone\nAlbum'}
@@ -82,41 +84,52 @@ export function PackagesManager({ vendorId }: { vendorId: string }) {
             onChange={(e) => setFeatures(e.target.value)}
           />
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={popular} onChange={(e) => setPopular(e.target.checked)} className="h-4 w-4 accent-brand-500" />
+            <input type="checkbox" data-testid="pkg-popular" checked={popular} onChange={(e) => setPopular(e.target.checked)} className="h-4 w-4 accent-brand-500" />
             Mark as most popular
           </label>
-          <button className="btn-primary w-full">
-            <Plus size={16} className="mr-1" /> Add package
+          <button className="btn-primary w-full" data-testid="pkg-submit">
+            <Plus size={16} aria-hidden className="mr-1" /> Add package
           </button>
-          {error && <p className="text-xs text-red-500">{error}</p>}
+          {error && <p role="alert" className="text-xs text-red-500">{error}</p>}
         </form>
 
-        <div className="space-y-3">
+        <div className="space-y-3" data-testid="pkg-list">
           {items.map((p) => (
-            <div key={p.id} className={`rounded-2xl border p-4 ${p.popular ? 'ring-2 ring-brand-500' : ''}`}>
+            <div key={p.id} data-testid={`pkg-row-${p.id}`} className={`rounded-2xl border p-4 ${p.popular ? 'ring-2 ring-brand-500' : ''}`}>
               <div className="flex items-start justify-between">
                 <div>
                   <div className="font-semibold">
                     {p.name}
-                    {p.popular && <span className="ml-2 chip">Popular</span>}
+                    {p.popular && (
+                      <span data-testid={`pkg-row-popular-${p.id}`} className="ml-2 chip">
+                        Popular
+                      </span>
+                    )}
                   </div>
                   <div className="text-xl font-bold">{formatCurrency(Number(p.price))}</div>
                 </div>
-                <button onClick={() => remove(p.id)} className="text-red-500">
-                  <Trash2 size={16} />
+                <button
+                  onClick={() => remove(p.id)}
+                  aria-label={`Delete package ${p.name}`}
+                  data-testid={`pkg-row-delete-${p.id}`}
+                  className="text-red-500"
+                >
+                  <Trash2 size={16} aria-hidden />
                 </button>
               </div>
               <ul className="mt-2 space-y-1 text-sm text-[rgb(var(--foreground))]/70">
                 {p.features.map((f) => (
                   <li key={f} className="flex items-center gap-2">
-                    <Check size={14} className="text-brand-500" /> {f}
+                    <Check size={14} aria-hidden className="text-brand-500" /> {f}
                   </li>
                 ))}
               </ul>
             </div>
           ))}
           {items.length === 0 && (
-            <p className="text-sm text-[rgb(var(--foreground))]/50">No packages yet.</p>
+            <p data-testid="pkg-empty" className="text-sm text-[rgb(var(--foreground))]/50">
+              No packages yet.
+            </p>
           )}
         </div>
       </div>

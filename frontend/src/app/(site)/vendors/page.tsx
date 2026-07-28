@@ -5,7 +5,7 @@ import { TiltCard } from '@/shared/motion/tilt-card';
 import { BackButton } from '@/shared/ui/back-button';
 import { formatCurrency } from '@/shared/lib/utils';
 import { Tr } from '@/shared/i18n/tr';
-import { Star, ShieldCheck } from 'lucide-react';
+import { Star, ShieldCheck, MapPin } from 'lucide-react';
 
 export const metadata = { title: 'Vendors' };
 
@@ -27,29 +27,68 @@ const PAGE_SIZE = 12;
 export default async function VendorsPage({
   searchParams,
 }: {
-  searchParams: { departmentId?: string; search?: string; city?: string; page?: string };
+  searchParams: {
+    departmentId?: string;
+    search?: string;
+    city?: string;
+    page?: string;
+    lat?: string;
+    lng?: string;
+  };
 }) {
   const page = Math.max(1, Number(searchParams.page) || 1);
+  const lat = searchParams.lat ? Number(searchParams.lat) : undefined;
+  const lng = searchParams.lng ? Number(searchParams.lng) : undefined;
+  const nearMe = lat != null && !Number.isNaN(lat) && lng != null && !Number.isNaN(lng);
+
   const qs = new URLSearchParams();
   if (searchParams.departmentId) qs.set('departmentId', searchParams.departmentId);
   if (searchParams.search) qs.set('search', searchParams.search);
   if (searchParams.city) qs.set('city', searchParams.city);
+  if (nearMe) {
+    qs.set('lat', String(lat));
+    qs.set('lng', String(lng));
+  }
   qs.set('limit', String(PAGE_SIZE));
   qs.set('page', String(page));
 
-  const res = await serverApi<{ data: Vendor[]; total: number; pages: number }>(
+  let res = await serverApi<{ data: Vendor[]; total: number; pages: number }>(
     `/vendors?${qs.toString()}`,
     { tags: [CACHE_TAGS.vendors] },
   );
+
+  // "Near me" with no nearby events → fall back to showing all events, and tell
+  // the user why. When events *are* nearby, note that too.
+  const noneNearby = nearMe && (res?.total ?? 0) === 0;
+  if (noneNearby) {
+    const fq = new URLSearchParams();
+    fq.set('limit', String(PAGE_SIZE));
+    fq.set('page', String(page));
+    res = await serverApi<{ data: Vendor[]; total: number; pages: number }>(
+      `/vendors?${fq.toString()}`,
+      { tags: [CACHE_TAGS.vendors] },
+    );
+  }
   const vendors = res?.data ?? [];
   const pages = res?.pages ?? 1;
+  const locationNotice = nearMe
+    ? noneNearby
+      ? 'No events found near your location — showing all events instead.'
+      : 'Showing events near your current location.'
+    : null;
 
-  // build href for a given page, preserving filters
+  // build href for a given page, preserving filters. Only keep lat/lng while
+  // there are nearby results — once we've fallen back to all events, paging
+  // shouldn't re-trigger the (empty) proximity query.
   const pageHref = (p: number) => {
     const q = new URLSearchParams();
     if (searchParams.departmentId) q.set('departmentId', searchParams.departmentId);
     if (searchParams.search) q.set('search', searchParams.search);
     if (searchParams.city) q.set('city', searchParams.city);
+    if (nearMe && !noneNearby) {
+      q.set('lat', String(lat));
+      q.set('lng', String(lng));
+    }
     q.set('page', String(p));
     return `/vendors?${q.toString()}`;
   };
@@ -63,15 +102,28 @@ export default async function VendorsPage({
         <h1 className="text-4xl font-bold">
           <Tr>Vendors</Tr>
         </h1>
-        <p className="mt-2 text-[rgb(var(--foreground))]/60">
+        <p data-testid="vendors-count" className="mt-2 text-[rgb(var(--foreground))]/60">
           <Tr>{`${res?.total ?? 0} vendors available. Filter by department from the home page.`}</Tr>
         </p>
+        {locationNotice && (
+          <p
+            data-testid="vendors-proximity-notice"
+            className="mt-3 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-4 py-1.5 text-sm text-accent"
+          >
+            <MapPin size={14} aria-hidden />
+            <Tr>{locationNotice}</Tr>
+          </p>
+        )}
       </Reveal>
 
-      <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div data-testid="vendors-list" className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {vendors.map((v) => (
           <TiltCard key={v.id} className="card h-full overflow-hidden">
-            <Link href={`/vendors/${v.slug}`} className="flex h-full flex-col">
+            <Link
+              href={`/vendors/${v.slug}`}
+              data-testid={`vendors-card-${v.slug}`}
+              className="flex h-full flex-col"
+            >
               <div className="relative h-40 overflow-hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -106,14 +158,18 @@ export default async function VendorsPage({
           </TiltCard>
         ))}
         {vendors.length === 0 && (
-          <p className="text-[rgb(var(--foreground))]/50">
+          <p data-testid="vendors-empty" className="text-[rgb(var(--foreground))]/50">
             <Tr>No vendors found.</Tr>
           </p>
         )}
       </div>
 
       {pages > 1 && (
-        <div className="mt-10 flex items-center justify-center gap-2">
+        <nav
+          aria-label="Pagination"
+          data-testid="vendors-pagination"
+          className="mt-10 flex items-center justify-center gap-2"
+        >
           {page > 1 && (
             <Link href={pageHref(page - 1)} className="btn-ghost px-4 py-2 text-sm">
               ← Prev
@@ -139,7 +195,7 @@ export default async function VendorsPage({
               Next →
             </Link>
           )}
-        </div>
+        </nav>
       )}
     </div>
   );

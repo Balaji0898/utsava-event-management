@@ -1,0 +1,60 @@
+{
+  "name": "utsava-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Utsava Event Management — Playwright automation suite (UI E2E, API contract, security regression, a11y, visual)",
+  "type": "commonjs",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+
+    "e2e": "node scripts/run-e2e.mjs",
+    "e2e:smoke": "node scripts/run-e2e.mjs --grep @smoke",
+    "e2e:keep": "E2E_KEEP_BRANCH=1 node scripts/run-e2e.mjs",
+    "e2e:nobuild": "E2E_SKIP_BUILD=1 node scripts/run-e2e.mjs",
+
+    "test": "playwright test",
+    "test:smoke": "playwright test --grep @smoke",
+    "test:api": "playwright test --project=api",
+    "test:security": "playwright test --project=security",
+    "test:a11y": "playwright test --project=a11y",
+    "test:visual": "playwright test --project=visual",
+    "test:visual:update": "playwright test --project=visual --update-snapshots",
+    "test:ui": "playwright test --project=chromium",
+    "test:public": "playwright test --project=chromium tests/e2e/public",
+    "test:auth": "playwright test --project=chromium tests/e2e/auth",
+    "test:admin": "playwright test --project=chromium tests/e2e/admin",
+    "test:journeys": "playwright test --project=chromium tests/e2e/journeys",
+    "test:mobile": "playwright test --project=mobile-chrome",
+    "test:cross-browser": "playwright test --project=firefox --project=webkit",
+
+    "test:ui:headed": "playwright test --project=chromium --headed",
+    "test:ui:debug": "playwright test --project=chromium --ui",
+    "test:public:headed": "playwright test --project=chromium tests/e2e/public --headed",
+    "test:admin:headed": "playwright test --project=chromium tests/e2e/admin --headed",
+
+    "report": "node scripts/generate-e2e-report.js",
+    "report:html": "node scripts/generate-e2e-report-html.js",
+    "report:open": "playwright show-report",
+    "test:report": "npm run test; npm run report && npm run report:html",
+
+    "db:branch": "node scripts/db-branch.mjs create",
+    "db:uri": "node scripts/db-branch.mjs uri",
+    "db:delete": "node scripts/db-branch.mjs delete",
+    "db:gc": "node scripts/db-branch.mjs gc",
+    "db:prepare": "node scripts/prepare-db.mjs",
+
+    "install:browsers": "playwright install --with-deps chromium firefox webkit"
+  },
+  "notes": {
+    "playwrightPin": "@playwright/test is PINNED exactly, not a caret range. 1.62 dropped chromium downloads for macOS 13, so `^1.59.1` silently floats to a version that cannot run locally at all. 1.59.1 also matches the sibling Playright suite and its pinned mcr.microsoft.com/playwright:v1.59.1-jammy CI image. Bump deliberately, and verify `npx playwright install chromium` still succeeds on macOS before merging."
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.1",
+    "@playwright/test": "1.59.1",
+    "@types/node": "^22.10.2",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2"
+  }
+}

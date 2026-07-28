@@ -31,9 +31,10 @@ export function BackButton({
   return (
     <button
       onClick={goBack}
+      data-testid="back-button"
       className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors hover:bg-[rgb(var(--muted))] ${className ?? ''}`}
     >
-      <ArrowLeft size={16} /> {translatedLabel}
+      <ArrowLeft size={16} aria-hidden /> {translatedLabel}
     </button>
   );
 }

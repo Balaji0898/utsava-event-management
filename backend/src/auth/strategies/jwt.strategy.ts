@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { requireSecret } from '../../common/env.util';
 
 export interface JwtPayload {
   sub: string;
@@ -14,7 +15,9 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_ACCESS_SECRET ?? 'change_me_access_secret',
+      // Fail closed: no insecure literal fallback. A missing secret must crash
+      // the app on boot rather than silently sign/verify with a public default.
+      secretOrKey: requireSecret('JWT_ACCESS_SECRET'),
     });
   }
 

@@ -52,6 +52,16 @@ export class CreateVendorDto {
   @IsString()
   location?: string;
 
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  latitude?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  longitude?: number;
+
   @ApiPropertyOptional({ type: [String] })
   @IsOptional()
   @IsArray()

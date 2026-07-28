@@ -45,7 +45,25 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;0,800;1,500&family=Cormorant+Garamond:wght@500;600;700&family=Cinzel:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
-        <style>{`:root{--font-sans:'Inter',system-ui,sans-serif;--font-display:'Playfair Display',Georgia,serif;--font-brand:'Cinzel',Georgia,serif}`}</style>
+        {/*
+          `dangerouslySetInnerHTML`, not a text child — and this is load-bearing, not stylistic.
+
+          As a text child, React server-renders the CSS with its quotes HTML-escaped
+          (`&#x27;Inter&#x27;`) but produces raw `'` on the client. That text-content mismatch made
+          React discard the ENTIRE server-rendered document and re-render it client-side
+          ("An error occurred during hydration. The server HTML was replaced with client content in
+          #document"), so every page silently lost SSR: slower first paint, worse LCP, and
+          client-only subtrees such as the booking form taking seconds to appear.
+
+          `suppressHydrationWarning` on <html> above hides the console warning but does NOT prevent
+          the re-render, which is why this went unnoticed.
+        */}
+        <style
+          dangerouslySetInnerHTML={{
+            __html:
+              ":root{--font-sans:'Inter',system-ui,sans-serif;--font-display:'Playfair Display',Georgia,serif;--font-brand:'Cinzel',Georgia,serif}",
+          }}
+        />
         <script dangerouslySetInnerHTML={{ __html: launchGuard }} />
       </head>
       <body>

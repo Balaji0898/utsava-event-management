@@ -20,10 +20,13 @@ export function TiltCard({
   children,
   className,
   intensity = 10,
+  testId,
 }: {
   children: ReactNode;
   className?: string;
   intensity?: number;
+  /** Forwarded to whichever element actually renders, tilt or reduced-motion. */
+  testId?: string;
 }) {
   const reduce = useReducedMotion();
   const ref = useRef<HTMLDivElement>(null);
@@ -43,7 +46,11 @@ export function TiltCard({
   // Reduced motion: no tilt/glare, just render the card (CSS still gives a
   // subtle shadow lift on hover).
   if (reduce) {
-    return <div className={className}>{children}</div>;
+    return (
+      <div className={className} data-testid={testId}>
+        {children}
+      </div>
+    );
   }
 
   function onMove(e: React.MouseEvent<HTMLDivElement>) {
@@ -68,6 +75,7 @@ export function TiltCard({
         style={{ rotateX, rotateY, transformStyle: 'preserve-3d' }}
         whileHover={{ scale: 1.02, y: -6, z: 30, boxShadow: 'var(--shadow-card-hover)' }}
         transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+        data-testid={testId}
         className={`group relative ${className ?? ''}`}
       >
         {children}

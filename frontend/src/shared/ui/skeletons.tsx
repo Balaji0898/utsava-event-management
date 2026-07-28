@@ -1,7 +1,12 @@
 import { cn } from '@/shared/lib/utils';
 
+/**
+ * `aria-hidden` because a shimmer block carries no information — the surrounding
+ * `role="status"` region is what announces "Loading…". Without it every skeleton is
+ * an empty, unlabelled node in the accessibility tree.
+ */
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn('skeleton', className)} />;
+  return <div aria-hidden data-testid="skeleton" className={cn('skeleton', className)} />;
 }
 
 /** Card that mirrors a vendor/work card while data loads. */

@@ -7,23 +7,32 @@ import {
   Patch,
   Post,
   Query,
+  Req,
 } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { Request } from 'express';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { DepartmentsService } from './departments.service';
 import { CreateDepartmentDto, UpdateDepartmentDto } from './dto/department.dto';
 import { Public } from '../auth/decorators/public.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { isAdminRequest } from '../common/admin-request.util';
 
 @ApiTags('departments')
 @Controller('departments')
 export class DepartmentsController {
-  constructor(private readonly service: DepartmentsService) {}
+  constructor(
+    private readonly service: DepartmentsService,
+    private readonly jwt: JwtService,
+  ) {}
 
   @Public()
   @Get()
-  findAll(@Query('all') all?: string) {
-    return this.service.findAll(all === 'true');
+  async findAll(@Query('all') all?: string, @Req() req?: Request) {
+    // Inactive departments are only revealed to an authenticated admin.
+    const includeInactive = all === 'true' && (await isAdminRequest(req!, this.jwt));
+    return this.service.findAll(includeInactive);
   }
 
   @Public()
