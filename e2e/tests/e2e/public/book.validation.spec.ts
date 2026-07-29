@@ -136,11 +136,25 @@ test.describe('Book form - B1: optional numbers must be genuinely optional', () 
     await expect(bookPage.successCard).toBeHidden();
   });
 
-  test('BOOK-N-04 a fractional Guest count is rejected with a visible message', async ({ bookPage }) => {
+  test('BOOK-N-04 a fractional Guest count is blocked natively, before zod', async ({ bookPage }) => {
+    /**
+     * `type="number"` defaults to `step="1"`, so the browser rejects 2.5 with "The two nearest
+     * valid values are 2 and 3" and never runs the submit handler — the same native-first layering
+     * as the email field in BOOK-N-09. zod's `.int()` message is therefore unreachable by typing,
+     * and only guards a value the browser would accept.
+     *
+     * Verified against the real build rather than assumed: an earlier version of this test expected
+     * the zod message and failed.
+     */
     await bookPage.fillMinimumViable({ guests: '2.5' });
-    await bookPage.submit();
 
-    await bookPage.expectGuestsError(/whole number/i);
+    expect(
+      await BookPage.isInputValid(bookPage.guestsInput),
+      'step="1" must mark a fractional value invalid',
+    ).toBe(false);
+
+    await bookPage.submit();
+    await expect(bookPage.successCard, 'native validation must block the submit').toBeHidden();
   });
 
   test('BOOK-N-05 filling both numbers positively submits successfully', async ({ bookPage }) => {
