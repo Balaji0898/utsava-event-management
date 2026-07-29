@@ -1,24 +1,32 @@
 name: E2E (Playwright)
 
-# Boots an ephemeral full stack inside the runner against a throwaway Neon branch, then runs
-# the Playwright suite (UI E2E + API contract + security regression + a11y + visual) against
-# localhost. Nothing here ever touches the production database.
+# Boots an ephemeral full stack inside the runner against a throwaway Postgres service
+# container, then runs the Playwright suite (UI E2E + API contract + security regression +
+# a11y + visual) against localhost. Nothing here can reach the production database.
 #
-# Required repo secrets:
-#   NEON_API_KEY       → neon.tech → Account settings → API keys
-#   NEON_PROJECT_ID    → neon.tech → your project → Settings → General
-#   E2E_ADMIN_PASSWORD → any value >= 8 chars. Injected as SEED_ADMIN_PASSWORD so the seeded
-#                        SUPER_ADMIN has a password the suite can actually log in with.
-#                        (backend/prisma/seed.ts generates a random one below 8 chars and
-#                        prints it only once, which CI cannot read back.)
+# NO SECRETS OR EXTERNAL SERVICES ARE REQUIRED. The database is a container that lives and
+# dies with the job, so the suite runs on a fresh clone with zero configuration. This
+# replaced a Neon branch-per-run setup, which needed NEON_API_KEY + NEON_PROJECT_ID and so
+# never actually ran; it also needed a scheduled reaper, because a hard-cancelled runner
+# leaked a branch against the free plan's per-project quota. A container needs none of that.
+#
+# Each shard gets its OWN container and seeds it independently. That costs one extra
+# migrate+seed per shard, but against localhost the seed's ~60 unbatched creates are far
+# cheaper than the TLS round-trips they cost against Neon — and it buys real isolation:
+# previously all three shards shared one database, so a `@mutates` spec in one shard could
+# perturb the row counts another shard asserted on.
 #
 # Optional repo secrets:
-#   NEON_PARENT_BRANCH_ID → branch to fork from (defaults to the project's primary branch)
+#   E2E_ADMIN_PASSWORD → overrides the seeded SUPER_ADMIN password. It has a default below,
+#                        which is safe precisely because this database is unreachable from
+#                        outside the runner and is destroyed with the job. Any value the seed
+#                        accepts must be >= 8 chars (backend/prisma/seed.ts otherwise
+#                        generates a random one and prints it only once, which CI cannot
+#                        read back).
 #
 # Optional repo variables:
 #   E2E_BLOCKING = 'true' → a failing suite fails the workflow. Default: warn only, so this
-#                           can land without blocking the current push-to-main flow.
-#   E2E_SHARDS            → shard count, default 3
+#                           can land without blocking the current push-to-main deploys.
 
 on:
   push:
@@ -37,115 +45,62 @@ on:
       - '.github/workflows/e2e.yml'
   workflow_dispatch:
 
-# A newer push supersedes an in-flight run — but never cancel on main, or the Neon branch
-# cleanup step never gets to run and the free-plan branch quota leaks.
+# A newer push supersedes an in-flight run, on every branch including main. The old workflow
+# deliberately never cancelled on main, because cancelling skipped the Neon branch deletion
+# and leaked quota. With a service container there is nothing left to leak.
 concurrency:
   group: e2e-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+  cancel-in-progress: true
 
 env:
   NODE_VERSION: '22'
 
 jobs:
   # ---------------------------------------------------------------------------
-  # Provision one throwaway Neon branch for the whole run.
-  # ---------------------------------------------------------------------------
-  provision:
-    name: Provision test database
-    runs-on: ubuntu-latest
-    outputs:
-      ok: ${{ steps.guard.outputs.ok }}
-      branch: ${{ steps.branch.outputs.branch_name }}
-    steps:
-      - name: Check the required secrets are configured
-        id: guard
-        run: |
-          if [ -n "${{ secrets.NEON_API_KEY }}" ] \
-             && [ -n "${{ secrets.NEON_PROJECT_ID }}" ] \
-             && [ -n "${{ secrets.E2E_ADMIN_PASSWORD }}" ]; then
-            echo "ok=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "ok=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Skip (E2E secrets not set)
-        if: steps.guard.outputs.ok != 'true'
-        run: |
-          echo "::warning::NEON_API_KEY / NEON_PROJECT_ID / E2E_ADMIN_PASSWORD not set — skipping the E2E suite."
-          echo "::warning::See the header of .github/workflows/e2e.yml for where to get each value."
-
-      - name: Checkout
-        if: steps.guard.outputs.ok == 'true'
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        if: steps.guard.outputs.ok == 'true'
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-          cache-dependency-path: e2e/package-lock.json
-
-      - name: Install E2E dependencies
-        if: steps.guard.outputs.ok == 'true'
-        working-directory: e2e
-        run: npm ci
-
-      # Reap first: `if: always()` does not fire on every runner abort, so a cancelled run can
-      # leak a branch. The free plan caps branches per project, so this is not optional.
-      - name: Reap stale e2e branches
-        if: steps.guard.outputs.ok == 'true'
-        working-directory: e2e
-        env:
-          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
-          NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
-        run: npm run db:gc
-
-      - name: Create the Neon branch
-        id: branch
-        if: steps.guard.outputs.ok == 'true'
-        working-directory: e2e
-        env:
-          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
-          NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
-          NEON_PARENT_BRANCH_ID: ${{ secrets.NEON_PARENT_BRANCH_ID }}
-        run: node scripts/db-branch.mjs create
-
-      # A Neon branch arrives holding whatever its parent held, so the reset is what makes the
-      # fixtures deterministic. Runs ONCE here rather than per shard.
-      - name: Migrate and seed
-        if: steps.guard.outputs.ok == 'true'
-        working-directory: e2e
-        env:
-          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
-          NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
-          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
-        run: |
-          # The URI is re-derived from the branch NAME rather than passed as a job output:
-          # job outputs are unmasked and would print the database credential into the log.
-          DATABASE_URL="$(node scripts/db-branch.mjs uri)"
-          E2E_DATABASE_URL="$DATABASE_URL" node scripts/prepare-db.mjs
-
-  # ---------------------------------------------------------------------------
-  # Boot the stack per shard and run the suite.
+  # Boot a stack per shard against that shard's own Postgres, and run the suite.
   # ---------------------------------------------------------------------------
   test:
     name: Test (shard ${{ matrix.shard }}/${{ strategy.job-total }})
-    needs: provision
-    if: needs.provision.outputs.ok == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
         shard: [1, 2, 3]
+
+    # Reachable on 127.0.0.1 because the job's steps run directly on the runner rather than
+    # inside a container. The database is named `utsava_e2e` so it satisfies the disposability
+    # guard in e2e/scripts/lib/guard.mjs by BOTH of its positive tests — a local host and an
+    # `e2e` marker in the name — rather than relying on either alone.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: utsava_e2e
+        ports:
+          - 5432:5432
+        # GitHub gates the first step on these probes, so no explicit wait step is needed.
+        options: >-
+          --health-cmd "pg_isready -U postgres -d utsava_e2e"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
     steps:
       - uses: actions/checkout@v4
 
+      # Every lockfile must be listed: there is no package.json at the repo root, so the bare
+      # `cache: npm` this job used before could not resolve one and failed the step outright.
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+            e2e/package-lock.json
 
       - name: Install dependencies
         run: |
@@ -174,24 +129,19 @@ jobs:
           restore-keys: |
             next-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}-
 
-      # `run-e2e.mjs` owns the whole lifecycle: derive the branch URI, boot backend + frontend,
-      # health-gate both, run Playwright, then stop the stack. E2E_KEEP_BRANCH=1 because the
-      # cleanup job below deletes the branch once — not once per shard.
+      # `run-e2e.mjs` owns the whole lifecycle: migrate + seed the container, build and boot
+      # backend + frontend, health-gate both, run Playwright, then stop the stack. It picks
+      # `external` mode from E2E_DB_MODE and takes the URL from E2E_DATABASE_URL; the JWT and
+      # revalidate secrets are generated per run inside scripts/stack.mjs, so none are needed
+      # here.
       - name: Run the suite
         working-directory: e2e
         env:
           CI: 'true'
-          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
-          NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
-          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
-          E2E_KEEP_BRANCH: '1'
-          E2E_SKIP_DB: '0'
-        run: |
-          # The database is already migrated and seeded by the provision job, so skip that here
-          # and only boot the stack.
-          DATABASE_URL="$(node scripts/db-branch.mjs uri)"
-          E2E_DATABASE_URL="$DATABASE_URL" \
-            node scripts/run-e2e.mjs --shard=${{ matrix.shard }}/${{ strategy.job-total }}
+          E2E_DB_MODE: external
+          E2E_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/utsava_e2e
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD || 'e2e-ci-throwaway-admin-pw' }}
+        run: node scripts/run-e2e.mjs --shard=${{ matrix.shard }}/${{ strategy.job-total }}
 
       - name: Upload the blob report
         if: ${{ !cancelled() }}
@@ -216,7 +166,7 @@ jobs:
   report:
     name: Merge reports
     needs: test
-    if: ${{ !cancelled() && needs.provision.outputs.ok == 'true' }}
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -279,31 +229,3 @@ jobs:
             exit 1
           fi
           echo "::warning::The E2E suite failed. Set the E2E_BLOCKING repo variable to 'true' to make this fail the build."
-
-  # ---------------------------------------------------------------------------
-  # Always destroy the branch. `if: always()` plus the scheduled reaper as backstop.
-  # ---------------------------------------------------------------------------
-  cleanup:
-    name: Delete the test database
-    needs: [provision, test]
-    if: ${{ always() && needs.provision.outputs.ok == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-          cache-dependency-path: e2e/package-lock.json
-
-      - name: Install E2E dependencies
-        working-directory: e2e
-        run: npm ci
-
-      - name: Delete the Neon branch
-        working-directory: e2e
-        env:
-          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
-          NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
-        run: npm run db:delete
