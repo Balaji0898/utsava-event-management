@@ -90,7 +90,38 @@ jobs:
           if [ -n "$GREP" ]; then
             ARGS+=("--grep=$GREP")
           fi
+
+          # A spec that cannot stabilise must NOT bury the baselines that did write.
+          #
+          # Playwright exits non-zero if any spec fails, which failed this step and skipped
+          # PR creation entirely — so a run that produced 10 good baselines and 4 timeouts
+          # landed nothing at all, and each diagnosis cycle cost a full 25-minute run. The
+          # partial set is worth having; the stragglers are worth chasing separately.
+          #
+          # Deliberately NOT `|| true`: that hides the outcome, which is how a missing
+          # test-results/ directory once surfaced two steps later as a baffling "JSON not
+          # found". The code is captured, announced, and written to the summary instead.
+          set +e
           node scripts/run-e2e.mjs "${ARGS[@]}"
+          code=$?
+          set -e
+          if [ "$code" -ne 0 ]; then
+            echo "::warning::Playwright exited $code — one or more visual specs did not produce a baseline. Any PR from this run is PARTIAL; check the log above for which snapshots timed out."
+            echo "PARTIAL=1" >> "$GITHUB_ENV"
+          fi
+
+      # Makes the outcome legible without downloading anything: which baselines exist now.
+      - name: List the baselines that were written
+        run: |
+          echo "### Visual baselines present after this run" >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "${PARTIAL:-}" ]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo ":warning: **Partial** — some specs did not stabilise, so their baselines are absent." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          find e2e/tests -path '*__screenshots__*' -name '*.png' -printf '%f\n' 2>/dev/null | sort >> "$GITHUB_STEP_SUMMARY" || true
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Open a pull request with the new baselines
         uses: peter-evans/create-pull-request@v6
@@ -104,6 +135,12 @@ jobs:
             **Review the image diffs before merging** — every changed baseline is an accepted UI
             change. If a diff is unexpected, the UI regressed and this PR should be closed rather
             than merged.
+
+            ⚠️ **This set may be PARTIAL.** The workflow no longer fails when a spec cannot
+            produce a stable screenshot, because doing so discarded every good baseline
+            alongside the bad ones. Check the run summary for the list of baselines actually
+            written, and for a warning saying some are missing. A spec with no baseline keeps
+            failing in CI until one exists — it is not silently passing.
 
             Baselines are Linux-only by design; see the note at the top of
             `e2e/tests/visual/public.visual.spec.ts`.
