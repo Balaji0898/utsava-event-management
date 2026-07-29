@@ -110,6 +110,26 @@ export const apiPaths = {
 } as const;
 
 /**
+ * Glob for intercepting a BROWSER-side API call with `page.route()`.
+ *
+ * The browser never talks to the backend origin. `frontend/src/shared/lib/api.ts`
+ * sends every client-side call to the same-origin proxy at `/api/backend/...`,
+ * which `next.config.mjs` rewrites server-side — so the real request URL is
+ * `http://127.0.0.1:3000/api/backend/bookings/stats`, not `.../api/bookings/stats`.
+ *
+ * Always build browser route globs through this helper. A hand-written
+ * `**\/api/bookings/stats` matches nothing, and an unmatched route fails OPEN:
+ * the request sails through to the real API, so the spec either misses its
+ * assertion or — worse — passes vacuously while proving nothing. ADMDASH-E-01 and
+ * LOGIN-N-03 were both hitting exactly that.
+ *
+ * Note this is only for `page.route()`. Server-rendered fetches leave the runner
+ * as `${BACKEND_URL}/api/...` and cannot be intercepted from the page at all.
+ */
+export const apiRoute = (path: string): string =>
+  `**/api/backend${path.startsWith('/') ? path : `/${path}`}`;
+
+/**
  * Every `@Roles(ADMIN, SUPER_ADMIN)` route, as `[method, path]`.
  *
  * This drives the data-driven RBAC sweep — one spec asserting 401 anonymous,

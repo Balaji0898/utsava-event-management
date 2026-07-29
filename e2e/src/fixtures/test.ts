@@ -82,6 +82,14 @@ type Fixtures = {
 
 type WorkerFixtures = {
   /**
+   * The admin access token, minted once per worker.
+   *
+   * `POST /auth/login` is throttled to **10/min**, so this is worker-scoped and
+   * cached: one login per worker, not one per test.
+   */
+  adminToken: string;
+
+  /**
    * A CUSTOMER identity, minted once per worker.
    *
    * The RBAC sweep needs a non-admin token to exercise `RolesGuard`'s negative
@@ -147,13 +155,23 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
   // API clients
   // ---------------------------------------------------------------------------
 
-  api: async ({ playwright }, use, testInfo) => {
+  /**
+   * Admin-authenticated client, built from the worker-cached `adminToken`.
+   *
+   * Deliberately does NOT log in per test. `POST /auth/login` is throttled to 10/min
+   * and this fixture is the most widely used in the suite, so a login per test blew
+   * the budget within seconds and surfaced as a 429 on some unrelated spec —
+   * whichever one happened to be running when the bucket emptied. The browser side
+   * already avoided this by minting one `storageState` in `global.setup.ts`; this is
+   * the same economy for the API side.
+   *
+   * The context is still per-test, so nothing leaks between tests except the token.
+   */
+  api: async ({ playwright, adminToken }, use, testInfo) => {
     test.skip(!hasAdminCredentials(), 'E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD missing — see e2e/.env.example');
 
     const ctx = await playwright.request.newContext({ baseURL: urls.api });
-    const client = new ApiClient(ctx, testInfo.workerIndex);
-    await client.login(admin.email, admin.password);
-    await use(client);
+    await use(new ApiClient(ctx, testInfo.workerIndex, adminToken));
     await ctx.dispose();
   },
 
@@ -162,6 +180,39 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
     await use(new ApiClient(ctx, testInfo.workerIndex, null));
     await ctx.dispose();
   },
+
+  /**
+   * The admin access token, minted ONCE per worker.
+   *
+   * `POST /auth/login` is throttled to 10/min. Worker-scoped for the same reason
+   * `customerToken` is: one credential exchange per worker rather than one per test.
+   *
+   * Tradeoff: the token carries `JWT_ACCESS_TTL` (900s via scripts/stack.mjs) and
+   * `ApiClient` does not re-authenticate on a 401, so a worker whose tests run for
+   * more than 15 minutes of wall-clock would start seeing 401s. Observed shard
+   * execution is 30-150s, so the headroom is wide — but if that ever changes, raise
+   * `E2E_JWT_ACCESS_TTL` rather than reverting to a login per test.
+   */
+  adminToken: [
+    async ({ playwright }, use, workerInfo) => {
+      /**
+       * Yield empty rather than skipping here: `test.skip()` needs a test context and
+       * this is worker-scoped. The `api` fixture that consumes this does the skip,
+       * which is where it was before and where it still belongs.
+       */
+      if (!hasAdminCredentials()) {
+        await use('');
+        return;
+      }
+
+      const ctx = await playwright.request.newContext({ baseURL: urls.api });
+      const client = new ApiClient(ctx, workerInfo.workerIndex, null);
+      const { accessToken } = await client.login(admin.email, admin.password);
+      await use(accessToken);
+      await ctx.dispose();
+    },
+    { scope: 'worker' },
+  ],
 
   customerToken: [
     async ({ playwright }, use, workerInfo) => {

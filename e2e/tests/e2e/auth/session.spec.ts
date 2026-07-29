@@ -1,5 +1,5 @@
 import { test, expect, serial } from '@fixtures/test';
-import { paths } from '@config/urls';
+import { apiRoute, paths } from '@config/urls';
 import { messages, payloads } from '@data/test-data';
 import { storageKeys } from '@fixtures/init-scripts';
 import { AdminDashboardPage, LoginPage } from '@pages/index';
@@ -98,7 +98,7 @@ test.describe('Session - silent refresh', () => {
     );
 
     let refreshCalls = 0;
-    await adminPage.route('**/api/auth/refresh', async (route) => {
+    await adminPage.route(apiRoute('/auth/refresh'), async (route) => {
       refreshCalls += 1;
       await route.continue();
     });

@@ -1,5 +1,6 @@
 import { test, expect, serial } from '@fixtures/test';
 import { BookPage } from '@pages/index';
+import { apiRoute } from '@config/urls';
 import { messages, strings } from '@data/test-data';
 
 /**
@@ -194,7 +195,7 @@ test.describe('Book form - B2: an empty date must not reach the API', () => {
      * silently dropped elsewhere) and this test would then be worthless.
      */
     let sentBody: Record<string, unknown> | null = null;
-    await page.route('**/api/bookings', async (route) => {
+    await page.route(apiRoute('/bookings'), async (route) => {
       sentBody = route.request().postDataJSON() as Record<string, unknown>;
       await route.continue();
     });

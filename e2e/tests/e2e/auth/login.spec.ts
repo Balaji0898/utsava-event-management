@@ -1,7 +1,8 @@
 import { test, expect, serial } from '@fixtures/test';
 import { admin, hasAdminCredentials } from '@config/env';
 import { emails, messages, passwords } from '@data/test-data';
-import { paths } from '@config/urls';
+import { apiRoute, paths } from '@config/urls';
+import { LoginPage } from '@pages/index';
 
 /**
  * LOGIN — `/login`, the only page in the `(auth)` route group.
@@ -74,17 +75,47 @@ test.describe('Login - negative cases', () => {
     await loginPage.expectError(messages.login.invalidCredentials);
   });
 
-  test('LOGIN-N-03 rejects a malformed email client-side, before any request', async ({ loginPage, page }) => {
+  test('LOGIN-N-03 blocks a malformed email natively, before any request', async ({ loginPage, page }) => {
+    /**
+     * Two layers guard this field and which one fires depends on the value — the same
+     * native-first layering as BOOK-N-09:
+     *
+     *   - the input is `type="email"` and the form sets no `noValidate`, so the browser's
+     *     own constraint validation blocks submission and `handleSubmit` never runs. zod's
+     *     'Invalid email' is therefore unreachable by typing a malformed value;
+     *   - zod's message DOES surface for a value the browser accepts — most importantly an
+     *     empty field, since the input carries no `required` attribute. See LOGIN-N-07.
+     *
+     * Asserting the native path, because that is what a real user hits. An earlier version
+     * expected the zod message and was wrong; it also routed `**\/api/auth/login`, which
+     * never matched the same-origin proxy, so `requestMade` could not have gone true either
+     * way. Both are fixed here.
+     */
     let requestMade = false;
-    await page.route('**/api/auth/login', async (route) => {
+    await page.route(apiRoute('/auth/login'), async (route) => {
       requestMade = true;
       await route.continue();
     });
 
     await loginPage.attemptLogin('not-an-email', passwords.strong);
-    await loginPage.expectFieldError(messages.login.invalidEmail);
 
-    expect(requestMade, 'zod must reject before the network call, saving a throttle slot').toBe(false);
+    expect(
+      await LoginPage.isInputValid(loginPage.emailInput),
+      'type="email" must mark a malformed value invalid',
+    ).toBe(false);
+    await loginPage.expectStillOnLogin();
+    expect(requestMade, 'native validation must block before the network call, saving a throttle slot').toBe(
+      false,
+    );
+  });
+
+  test('LOGIN-N-07 an empty email surfaces the zod message, which native validation lets through', async ({
+    loginPage,
+  }) => {
+    /** The complementary case: no `required` attribute, so the browser hands it to zod. */
+    await loginPage.passwordInput.fill(passwords.strong);
+    await loginPage.submit();
+    await loginPage.expectFieldError(messages.login.invalidEmail);
   });
 
   test('LOGIN-N-04 rejects an empty password with the schema message', async ({ loginPage }) => {

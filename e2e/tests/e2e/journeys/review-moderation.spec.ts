@@ -1,5 +1,5 @@
 import { test, expect, serial } from '@fixtures/test';
-import { apiPaths } from '@config/urls';
+import { apiPaths, apiRoute } from '@config/urls';
 import { messages } from '@data/test-data';
 
 /**
@@ -123,7 +123,7 @@ test.describe('Journey - review moderation', () => {
      */
     const reviewerName = factory.name('Self Approve Attempt');
 
-    await page.route('**/api/cms/testimonials/submit', async (route) => {
+    await page.route(apiRoute('/cms/testimonials/submit'), async (route) => {
       const original = route.request().postDataJSON() as Record<string, unknown>;
       await route.continue({
         postData: JSON.stringify({ ...original, approved: true, status: 'ACTIVE' }),

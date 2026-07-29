@@ -1,5 +1,5 @@
 import { test, expect, serial } from '@fixtures/test';
-import { apiPaths } from '@config/urls';
+import { apiPaths, apiRoute } from '@config/urls';
 import { messages, strings } from '@data/test-data';
 import { PNG_1X1, SVG_WITH_SCRIPT, oversizePng } from '@components/uploader.component';
 
@@ -21,7 +21,7 @@ test.describe('Admin dashboard', () => {
   });
 
   test('ADMDASH-E-01 surfaces a stats failure as a readable message', async ({ dashboardPage, adminPage }) => {
-    await adminPage.route('**/api/bookings/stats', (route) =>
+    await adminPage.route(apiRoute('/bookings/stats'), (route) =>
       route.fulfill({ status: 500, contentType: 'application/json', body: '{"message":"Injected failure"}' }),
     );
 
