@@ -6,6 +6,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { Role } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import { createHash, timingSafeEqual } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto, RegisterDto, UpdateProfileDto } from './dto/auth.dto';
 import { requireSecret } from '../common/env.util';
@@ -32,11 +33,39 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
+  /**
+   * SHA-256, deliberately NOT bcrypt.
+   *
+   * bcrypt silently truncates its input at 72 bytes. `signTokens` builds every
+   * token for a user from the same `{ sub, email, role }` payload, so two refresh
+   * tokens for that user are byte-identical well past 72 — they first diverge
+   * inside the `iat`/`exp` claims around byte 180. bcrypt therefore compared only
+   * the shared prefix, and a rotated-away token still validated against the newly
+   * stored hash: rotation performed no revocation at all, so a captured refresh
+   * token stayed usable for its full 7-day TTL. API-AUTH-P-04 covers exactly this.
+   *
+   * bcrypt's cost factor exists to make low-entropy PASSWORDS expensive to brute
+   * force. A signed JWT is already high-entropy, so a fast full-length digest is
+   * both safe and the right tool here. `passwordHash` stays on bcrypt.
+   */
+  private hashRefreshToken(refreshToken: string): string {
+    return createHash('sha256').update(refreshToken, 'utf8').digest('hex');
+  }
+
+  /** Constant-time compare of two hex digests, to keep the check side-channel free. */
+  private refreshTokenMatches(refreshToken: string, stored: string): boolean {
+    const a = Buffer.from(this.hashRefreshToken(refreshToken), 'hex');
+    const b = Buffer.from(stored, 'hex');
+    // A legacy bcrypt value decodes to a different length; treat it as a miss so
+    // the user simply re-authenticates instead of throwing.
+    if (a.length !== b.length) return false;
+    return timingSafeEqual(a, b);
+  }
+
   private async persistRefreshToken(userId: string, refreshToken: string) {
-    const hashed = await bcrypt.hash(refreshToken, 10);
     await this.prisma.user.update({
       where: { id: userId },
-      data: { refreshToken: hashed },
+      data: { refreshToken: this.hashRefreshToken(refreshToken) },
     });
   }
 
@@ -89,8 +118,9 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user || !user.refreshToken) throw new ForbiddenException('Access denied');
 
-    const matches = await bcrypt.compare(refreshToken, user.refreshToken);
-    if (!matches) throw new ForbiddenException('Access denied');
+    if (!this.refreshTokenMatches(refreshToken, user.refreshToken)) {
+      throw new ForbiddenException('Access denied');
+    }
 
     const tokens = await this.signTokens(user.id, user.email, user.role);
     await this.persistRefreshToken(user.id, tokens.refreshToken);

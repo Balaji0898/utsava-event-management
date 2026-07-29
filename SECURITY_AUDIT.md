@@ -11,7 +11,7 @@
 
 ## 1. Executive Summary
 
-The application has a **solid authorization backbone** — global JWT + role guards are correctly wired, every mutating endpoint is role-gated, there is no SQL injection surface, passwords and refresh tokens are properly bcrypt-hashed, and real secrets are git-ignored. That foundation is good.
+The application has a **solid authorization backbone** — global JWT + role guards are correctly wired, every mutating endpoint is role-gated, there is no SQL injection surface, passwords are properly bcrypt-hashed, refresh tokens are SHA-256 hashed, and real secrets are git-ignored. That foundation is good.
 
 However, the audit found a **trivial full-admin-compromise path** (weak/guessable JWT secret + a publicly documented default admin password), several **stored-XSS vectors**, **PII over-exposure** (password hashes leaking through a booking endpoint), **critical dependency vulnerabilities** (Next.js), and a **near-total absence of DPDP Act compliance** (no consent, no data-subject rights, no privacy policy, no grievance officer, unconsented cross-border data transfers).
 
@@ -197,7 +197,8 @@ No age gate, no DOB, no verifiable parental consent — yet weddings/events rout
 
 - **Authorization backbone is correct:** global `JwtAuthGuard` + `RolesGuard` as `APP_GUARD` (`auth.module.ts:20-21`), `@Public()` opt-out honored, and **every** create/update/delete + stats + uploads route carries `@Roles(ADMIN, SUPER_ADMIN)`. No mutating route is accidentally public.
 - **No SQL injection surface** — all DB access is via Prisma's typed query builder; no `$queryRaw`/`$executeRaw`.
-- **Passwords & refresh tokens bcrypt-hashed** (cost 10); refresh-token **rotation** on every refresh; auth responses strip `passwordHash`/`refreshToken` via `sanitize()`.
+- **Passwords bcrypt-hashed** (cost 10). **Refresh tokens SHA-256 hashed**, deliberately not bcrypt: bcrypt truncates at 72 bytes, and every token for a user shares an identical prefix well past that, so a rotated-away token still validated and rotation revoked nothing. Regression-guarded by API-AUTH-P-04.
+- Refresh-token **rotation** on every refresh; auth responses strip `passwordHash`/`refreshToken` via `sanitize()`.
 - **Bookings (customer PII) are strictly admin-only** — no customer by-id read means no IDOR surface.
 - **Global `ValidationPipe({ whitelist:true, transform:true })`** neutralizes most mass-assignment.
 - **Self-registration cannot escalate role** (hardcoded `role: CUSTOMER`); public testimonial submit hardcodes `approved:false` without spreading the DTO.
