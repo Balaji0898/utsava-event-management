@@ -8,9 +8,8 @@ import { getCurrentPosition, reverseGeocode } from '@/shared/lib/geo';
 import { formatCurrency } from '@/shared/lib/utils';
 import { useI18n } from '@/shared/i18n';
 import { Tr } from '@/shared/i18n/tr';
+import { NEARBY_RADIUS_KM } from '@/shared/config/site';
 
-/** Radius (km) for the "near me" search. */
-const RADIUS_KM = 200;
 const LIMIT = 8;
 
 type Vendor = {
@@ -29,9 +28,9 @@ type Mode = 'locating' | 'nearby' | 'all';
 
 /**
  * On mount, asks the browser for the user's location. If granted, shows events
- * within RADIUS_KM of the user (falling back to all events if none are close);
- * if denied/unavailable, shows all available events. The permission prompt
- * therefore appears automatically when the site opens.
+ * within NEARBY_RADIUS_KM of the user (falling back to all events if none are
+ * close); if denied/unavailable, shows all available events. The permission
+ * prompt therefore appears automatically when the site opens.
  */
 export function NearbyEvents() {
   const { t } = useI18n();
@@ -52,7 +51,7 @@ export function NearbyEvents() {
 
       if (pos.ok) {
         const near = await fetchList(
-          `/vendors?lat=${pos.lat}&lng=${pos.lng}&radius=${RADIUS_KM}&limit=${LIMIT}`,
+          `/vendors?lat=${pos.lat}&lng=${pos.lng}&radius=${NEARBY_RADIUS_KM}&limit=${LIMIT}`,
         );
         if (cancelled) return;
         if (near.length > 0) {
@@ -96,7 +95,7 @@ export function NearbyEvents() {
     mode === 'locating'
       ? t('nearby.locating')
       : mode === 'nearby'
-        ? t('nearby.subtitleNear')
+        ? t('nearby.subtitleNear', { radius: NEARBY_RADIUS_KM })
         : t('nearby.subtitleAll');
 
   return (

@@ -23,6 +23,19 @@ export const site = {
   contact: defaultContact,
 };
 
+/**
+ * Radius (km) for every "near me" search on the site: the homepage "Events near
+ * you" section, the hero's geolocation search, and the default for
+ * /vendors?radius=. The locale files reference it through a {{radius}}
+ * placeholder, so changing this number also updates the visible copy.
+ *
+ * The backend keeps its own fallback for requests that omit ?radius= (see
+ * DEFAULT_NEARBY_RADIUS_KM in vendors.service.ts) — frontend and backend are
+ * separate deployables with no shared package, so the two cannot import one
+ * value.
+ */
+export const NEARBY_RADIUS_KM = 200;
+
 // Contact values are now admin-editable, so these are helpers computed from the
 // current contact rather than module-level constants.
 export const telHref = (phone: string) => {

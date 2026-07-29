@@ -46,7 +46,7 @@
     "titleNear": "Events near",
     "titleAll": "Explore events",
     "locating": "Finding events near your location…",
-    "subtitleNear": "Handpicked events within 200 km of you.",
+    "subtitleNear": "Handpicked events within {{radius}} km of you.",
     "subtitleAll": "Browse all available events."
   },
   "bestEvents": {

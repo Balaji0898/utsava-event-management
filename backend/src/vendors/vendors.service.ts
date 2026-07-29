@@ -22,6 +22,14 @@ export interface VendorQuery {
   radius?: number; // km
 }
 
+/**
+ * Radius (km) applied to a "near me" query that supplies coordinates but no
+ * explicit `radius`. Deliberately independent of the frontend's
+ * NEARBY_RADIUS_KM (currently 200): the site always sends `radius`, so this
+ * only governs direct API callers, for whom a conservative default is safer.
+ */
+export const DEFAULT_NEARBY_RADIUS_KM = 50;
+
 /** Great-circle distance between two lat/lng points, in km (Haversine). */
 function distanceKm(aLat: number, aLng: number, bLat: number, bLng: number): number {
   const R = 6371;
@@ -103,7 +111,7 @@ export class VendorsService {
     // Prisma has no geo). Paginated in memory (dataset is small). The caller
     // falls back to the unfiltered list when this comes back empty.
     if (q.lat != null && q.lng != null) {
-      const radius = q.radius && q.radius > 0 ? q.radius : 50;
+      const radius = q.radius && q.radius > 0 ? q.radius : DEFAULT_NEARBY_RADIUS_KM;
       const candidates = await this.prisma.vendor.findMany({
         where: { ...where, latitude: { not: null }, longitude: { not: null } },
         include,

@@ -5,6 +5,7 @@ import { TiltCard } from '@/shared/motion/tilt-card';
 import { BackButton } from '@/shared/ui/back-button';
 import { formatCurrency } from '@/shared/lib/utils';
 import { Tr } from '@/shared/i18n/tr';
+import { NEARBY_RADIUS_KM } from '@/shared/config/site';
 import { Star, ShieldCheck, MapPin } from 'lucide-react';
 
 export const metadata = { title: 'Vendors' };
@@ -41,8 +42,9 @@ export default async function VendorsPage({
   const lat = searchParams.lat ? Number(searchParams.lat) : undefined;
   const lng = searchParams.lng ? Number(searchParams.lng) : undefined;
   const nearMe = lat != null && !Number.isNaN(lat) && lng != null && !Number.isNaN(lng);
-  // Default proximity radius: 200 km (overridable via ?radius=).
-  const radius = Number(searchParams.radius) > 0 ? Number(searchParams.radius) : 200;
+  // Overridable via ?radius=; defaults to the site-wide "near me" radius.
+  const radius =
+    Number(searchParams.radius) > 0 ? Number(searchParams.radius) : NEARBY_RADIUS_KM;
 
   const qs = new URLSearchParams();
   if (searchParams.departmentId) qs.set('departmentId', searchParams.departmentId);

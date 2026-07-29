@@ -7,6 +7,7 @@ import { useRef, useState } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { ArrowUpRight, Search, MapPin, CalendarDays, PartyPopper, Sparkles } from 'lucide-react';
 import { useI18n } from '@/shared/i18n';
+import { NEARBY_RADIUS_KM } from '@/shared/config/site';
 import { Magnetic } from '@/shared/motion/magnetic';
 import { LocationInput } from '@/shared/ui/location-input';
 
@@ -116,7 +117,7 @@ export function Hero() {
                   value={city}
                   onChange={setCity}
                   onGeoCoords={(lat, lng) =>
-                    router.push(`/vendors?lat=${lat}&lng=${lng}&radius=200`)
+                    router.push(`/vendors?lat=${lat}&lng=${lng}&radius=${NEARBY_RADIUS_KM}`)
                   }
                   placeholder={t('hero.searchPlaceholderPlace')}
                   inputClassName="w-full bg-transparent text-sm font-semibold outline-none placeholder:text-[rgb(var(--foreground))]/40"
