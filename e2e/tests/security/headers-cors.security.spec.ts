@@ -146,7 +146,7 @@ test.describe('SEC CORS', () => {
 });
 
 test.describe('SEC token storage', () => {
-  test('SEC-21 session tokens live in localStorage, readable by any script', async ({ loginPage, page }) => {
+  test('SEC-21 session tokens live in localStorage, readable by any script', async ({ adminPage }) => {
     /**
      * SECURITY_AUDIT.md M-3. `accessToken` and `refreshToken` are in localStorage rather than
      * in httpOnly cookies, so ANY script that runs on the page can read them — which is what
@@ -154,6 +154,13 @@ test.describe('SEC token storage', () => {
      *
      * Asserted as the secure state (nothing sensitive readable from JS) and marked
      * expected-fail, so migrating to httpOnly cookies flips it green.
+     *
+     * Requires a SESSION to mean anything. This used to open `/login` on the anonymous
+     * `page`, where localStorage holds no tokens at all — so the assertion passed
+     * vacuously, and `test.fail()` then reported that pass as an UNEXPECTED failure,
+     * making a green suite impossible. `adminPage` carries the storageState minted once
+     * in `global.setup.ts`, and since auth is 100% localStorage that state IS the
+     * session — so this costs no extra login against the 10/min throttle.
      */
     test.info().annotations.push({
       type: 'known-vulnerability',
@@ -163,8 +170,9 @@ test.describe('SEC token storage', () => {
     });
     test.fail();
 
-    await loginPage.open();
-    const readable = await page.evaluate(() => Object.keys(localStorage));
+    /** Any same-origin page will do; localStorage is seeded with the context, not by load. */
+    await adminPage.goto(`${urls.base}${paths.admin}`, { waitUntil: 'domcontentloaded' });
+    const readable = await adminPage.evaluate(() => Object.keys(localStorage));
     expect(readable, 'no credential should be reachable from page scripts').not.toContain('refreshToken');
   });
 });
