@@ -116,7 +116,7 @@ export function Hero() {
                   value={city}
                   onChange={setCity}
                   onGeoCoords={(lat, lng) =>
-                    router.push(`/vendors?lat=${lat}&lng=${lng}`)
+                    router.push(`/vendors?lat=${lat}&lng=${lng}&radius=200`)
                   }
                   placeholder={t('hero.searchPlaceholderPlace')}
                   inputClassName="w-full bg-transparent text-sm font-semibold outline-none placeholder:text-[rgb(var(--foreground))]/40"

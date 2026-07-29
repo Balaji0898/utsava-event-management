@@ -11,6 +11,7 @@ import { Faq } from '@/features/website/components/faq';
 import { ContactSection } from '@/features/website/components/contact-section';
 import { FunctionHallsSection, type Hall } from '@/features/website/components/function-halls-section';
 import { BestEventsSlider, type BestEventSlide } from '@/features/website/components/best-events-slider';
+import { NearbyEvents } from '@/features/website/components/nearby-events';
 import { VendorGridSkeleton } from '@/shared/ui/skeletons';
 import { T } from '@/shared/i18n';
 import { Tr } from '@/shared/i18n/tr';
@@ -80,6 +81,10 @@ export default function HomePage() {
   return (
     <>
       <Hero />
+
+      {/* Events near you — asks for location on open; shows events within 200km
+          when allowed, otherwise all events. Client-rendered (needs geolocation). */}
+      <NearbyEvents />
 
       {/* Best Events — cinematic auto-play showcase, right under the hero */}
       <section className="container-page pt-6 pb-12">

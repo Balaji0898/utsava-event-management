@@ -34,12 +34,15 @@ export default async function VendorsPage({
     page?: string;
     lat?: string;
     lng?: string;
+    radius?: string;
   };
 }) {
   const page = Math.max(1, Number(searchParams.page) || 1);
   const lat = searchParams.lat ? Number(searchParams.lat) : undefined;
   const lng = searchParams.lng ? Number(searchParams.lng) : undefined;
   const nearMe = lat != null && !Number.isNaN(lat) && lng != null && !Number.isNaN(lng);
+  // Default proximity radius: 200 km (overridable via ?radius=).
+  const radius = Number(searchParams.radius) > 0 ? Number(searchParams.radius) : 200;
 
   const qs = new URLSearchParams();
   if (searchParams.departmentId) qs.set('departmentId', searchParams.departmentId);
@@ -48,6 +51,7 @@ export default async function VendorsPage({
   if (nearMe) {
     qs.set('lat', String(lat));
     qs.set('lng', String(lng));
+    qs.set('radius', String(radius));
   }
   qs.set('limit', String(PAGE_SIZE));
   qs.set('page', String(page));
@@ -88,6 +92,7 @@ export default async function VendorsPage({
     if (nearMe && !noneNearby) {
       q.set('lat', String(lat));
       q.set('lng', String(lng));
+      q.set('radius', String(radius));
     }
     q.set('page', String(p));
     return `/vendors?${q.toString()}`;
