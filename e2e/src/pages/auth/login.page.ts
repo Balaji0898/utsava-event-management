@@ -57,13 +57,21 @@ export class LoginPage extends BasePage {
     return this.testId(tid.login.error);
   }
 
-  /** zod's per-field errors, rendered as small red `<p>` siblings. */
+  /**
+   * zod's per-field errors.
+   *
+   * Selected by their stable `id` (`login-email-error`, `login-password-error`), NOT by
+   * colour class. These were `p.text-red-500`, which silently matched nothing the moment
+   * the WCAG contrast work changed those paragraphs to `text-red-600 dark:text-red-400` —
+   * a restyle should never be able to break a test's ability to find an element. The
+   * form-level error carries no id, so it is correctly excluded here.
+   */
   get emailFieldError(): Locator {
-    return this.form.locator('p.text-red-500').first();
+    return this.form.locator('p[id$="-error"]').first();
   }
 
   get fieldErrors(): Locator {
-    return this.form.locator('p.text-red-500');
+    return this.form.locator('p[id$="-error"]');
   }
 
   /**

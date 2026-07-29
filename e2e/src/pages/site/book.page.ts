@@ -118,9 +118,13 @@ export class BookPage extends SitePage {
     return this.testId(tid.book.success);
   }
 
-  /** Field-level zod errors — only three fields have them. */
+  /**
+   * Field-level zod errors, selected by their stable `id` (`book-name-error` and friends)
+   * rather than by colour class — see the note in login.page.ts. `p.text-red-500` stopped
+   * matching when the contrast fix restyled these paragraphs.
+   */
   fieldError(text: string | RegExp): Locator {
-    return this.form.locator('p.text-red-500').filter({ hasText: text });
+    return this.form.locator('p[id$="-error"]').filter({ hasText: text });
   }
 
   // -------------------------------------------------------------------- actions

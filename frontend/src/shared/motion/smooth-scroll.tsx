@@ -8,18 +8,51 @@ const NAV_OFFSET = -88; // clear the sticky navbar (h-20)
 /** Buttery smooth momentum scrolling (Lenis) + reliable in-page anchor scrolling. */
 export function SmoothScroll({ children }: { children: ReactNode }) {
   useEffect(() => {
-    const lenis = new Lenis({
-      duration: 1.1,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      smoothWheel: true,
-    });
+    /**
+     * Honour prefers-reduced-motion, like `primitives.tsx` and `tilt-card.tsx` do.
+     *
+     * Momentum scrolling is exactly the kind of vestibular trigger the setting
+     * exists to switch off, so skipping it is the accessible behaviour on its own
+     * merits. It also makes the page go still: Lenis drives an unconditional
+     * `requestAnimationFrame` loop, and a permanently animating page can never
+     * produce two identical frames — so `toHaveScreenshot` timed out "generating
+     * new stable screenshot expectation" and no visual baseline could be written
+     * at all, even with --update-snapshots.
+     *
+     * Anchor handling below is deliberately kept in both modes; only the easing
+     * differs. Losing in-page anchor navigation under reduced motion would be a
+     * regression, not a simplification.
+     */
+    const prefersReduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const lenis = prefersReduced
+      ? null
+      : new Lenis({
+          duration: 1.1,
+          easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+          smoothWheel: true,
+        });
 
     let raf = 0;
-    const loop = (time: number) => {
-      lenis.raf(time);
+    if (lenis) {
+      const loop = (time: number) => {
+        lenis.raf(time);
+        raf = requestAnimationFrame(loop);
+      };
       raf = requestAnimationFrame(loop);
+    }
+
+    /** Lenis when it is running, native instant scrolling when it is not. */
+    const scrollToEl = (el: HTMLElement) => {
+      if (lenis) {
+        lenis.scrollTo(el, { offset: NAV_OFFSET });
+        return;
+      }
+      const top = el.getBoundingClientRect().top + window.scrollY + NAV_OFFSET;
+      window.scrollTo({ top, behavior: 'auto' });
     };
-    raf = requestAnimationFrame(loop);
 
     // Track pending timers so they can be cancelled on unmount (no work against
     // a destroyed Lenis, no dangling retry loops).
@@ -40,7 +73,7 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
         if (cancelled) return;
         const el = document.getElementById(id);
         if (el) {
-          lenis.scrollTo(el, { offset: NAV_OFFSET });
+          scrollToEl(el);
         } else if (tries++ < 25) {
           later(tick, 150);
         }
@@ -65,7 +98,7 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
       const el = document.getElementById(id);
       if (el) {
         e.preventDefault();
-        lenis.scrollTo(el, { offset: NAV_OFFSET });
+        scrollToEl(el);
         if (typeof history !== 'undefined') history.replaceState(null, '', href);
       } else {
         // Different page or streamed section — allow the navigation, then scroll.
@@ -86,10 +119,10 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
       timers.forEach(clearTimeout);
-      cancelAnimationFrame(raf);
+      if (raf) cancelAnimationFrame(raf);
       document.removeEventListener('click', onClick);
       window.removeEventListener('hashchange', onHashChange);
-      lenis.destroy();
+      lenis?.destroy();
     };
   }, []);
 

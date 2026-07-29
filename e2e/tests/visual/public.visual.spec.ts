@@ -58,7 +58,15 @@ test.describe('Visual - public components', () => {
   });
 
   test('VIS-V-09 a vendor card renders consistently @smoke', async ({ vendorsPage }) => {
-    await vendorsPage.open();
+    /**
+     * Filtered by name, not the bare list.
+     *
+     * `/vendors` sorts newest-first and pages at 12, so every vendor another worker
+     * creates pushes the seeded anchor further down — on a full run it had fallen off
+     * page one entirely and the card simply was not there. Searching for it makes its
+     * presence independent of whatever else the run has created.
+     */
+    await vendorsPage.openFiltered({ search: anchorVendor.name });
     await vendorsPage.expectContains(anchorVendor.slug);
     await vendorsPage.settle();
 
