@@ -233,24 +233,49 @@ test.describe('Login - security cases', () => {
     await loginPage.expectSessionCleared();
   });
 
-  test('LOGIN-N-08 repeated failures are eventually rate-limited', async ({ loginPage }) => {
+  test('LOGIN-N-08 repeated failures are eventually rate-limited', async ({ loginPage, page }) => {
     /**
      * The UI half of SEC-22. The browser shares one IP bucket with no `X-Forwarded-For`
      * partitioning, so the 10/min limit applies — and the user sees the raw backend throttle
      * message in the error node rather than anything friendly. Worth knowing.
      */
+    /**
+     * The attempts have to FIT INSIDE the throttle window to prove anything.
+     *
+     * The limit is 10 per 60s (`@Throttle` on AuthController.login), which is a sliding
+     * window — so if the loop takes longer than a minute, early attempts age out and the
+     * count never reaches 10 no matter how many times it runs. The original loop reopened
+     * the page every iteration and waited up to 20s for the error node, which on a loaded
+     * runner exceeded 60s across 12 attempts and reported "no throttle" while the control
+     * was working perfectly. Shard 2 slowing from 249s to 388s is what tipped it over.
+     *
+     * So: navigate ONCE (a failed login leaves the form in place), and cap the per-attempt
+     * wait low enough that ten attempts cannot span the window. Watching the responses
+     * rather than the rendered text also removes the stale-read trap — after the first
+     * failure the error node is already visible, so `waitFor` returns instantly and could
+     * hand back the PREVIOUS message.
+     */
+    const statuses: number[] = [];
+    page.on('response', (res) => {
+      if (res.url().includes('/auth/login')) statuses.push(res.status());
+    });
+
+    await loginPage.open();
+
     let sawThrottle = false;
-    for (let i = 0; i < 12; i += 1) {
-      await loginPage.open();
-      await loginPage.attemptLogin(admin.email, passwords.wrong);
-      await loginPage.errorMessage.waitFor({ state: 'visible', timeout: 20_000 }).catch(() => undefined);
+    for (let i = 0; i < 15 && !sawThrottle; i += 1) {
+      await loginPage.fill(admin.email, passwords.wrong);
+      await loginPage.submit();
+      await expect(loginPage.errorMessage).toBeVisible({ timeout: 5_000 }).catch(() => undefined);
 
       const text = (await loginPage.errorMessage.textContent()) ?? '';
-      if (/too many|throttl|rate/i.test(text)) {
-        sawThrottle = true;
-        break;
-      }
+      sawThrottle = /too many|throttl|rate/i.test(text);
     }
+
+    expect(
+      statuses.some((s) => s === 429),
+      `the backend must actually throttle — saw statuses ${statuses.join(',')}`,
+    ).toBe(true);
 
     expect(
       sawThrottle,

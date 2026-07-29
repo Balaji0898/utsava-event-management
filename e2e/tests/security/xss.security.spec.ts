@@ -151,7 +151,6 @@ test.describe('SEC XSS - React-escaped surfaces (regression guards)', () => {
     api,
     factory,
     bookingsPage,
-    xssProbe,
   }) => {
     const email = factory.email('xss-booking');
     await factory.createBooking({
@@ -160,9 +159,20 @@ test.describe('SEC XSS - React-escaped surfaces (regression guards)', () => {
     });
     void api;
 
-    await xssProbe(xssProbes.booking);
-    await bookingsPage.open();
-    await xssProbe(xssProbes.booking);
+    /**
+     * Seeded through the page object, NOT the `xssProbe` fixture. This spec asserts via
+     * `bookingsPage`, which runs on `adminPage` — a different context from the default
+     * `page` the fixture seeds. The probe was being planted on one page and read from
+     * another, so the assertion saw `undefined` rather than 'safe' and failed while
+     * proving nothing about escaping.
+     */
+    /**
+     * Seeded ONCE, before the navigation. `seedXssProbe` registers an init script, so the
+     * new document gets the probe at document-start — before any page script runs — and a
+     * payload firing during render overwrites it. Re-seeding after the load would erase
+     * exactly that evidence and turn a real XSS into a green test.
+     */
+    await bookingsPage.seedXssProbe(xssProbes.booking);
     await bookingsPage.open();
 
     await bookingsPage.expectContains(email);

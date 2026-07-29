@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page, type Response } from '@playwright/test';
 import { Dialogs } from '@fixtures/dialogs';
+import { installXssProbe } from '@fixtures/init-scripts';
 import { tid } from '@config/testids';
 import { paths } from '@config/urls';
 import { revalidateSecret } from '@config/env';
@@ -200,6 +201,25 @@ export abstract class BasePage {
   /** Read an `window.__*Probe` XSS tripwire. 'safe' means nothing executed. */
   async readXssProbe(name: string): Promise<string | undefined> {
     return this.page.evaluate((n) => (window as unknown as Record<string, string>)[n], name);
+  }
+
+  /**
+   * Seed an XSS tripwire on THIS page, so `readXssProbe` can read it back.
+   *
+   * Use this rather than the `xssProbe` fixture whenever the spec drives a page other
+   * than the default one. That fixture seeds the default `context`/`page`, so a spec
+   * asserting through an admin page object — which runs on `adminPage`, a separate
+   * context — seeded one page and read another, and got `undefined` instead of 'safe'.
+   * SEC-XSS-booking failed exactly that way. Bound to `this.page` by construction.
+   *
+   * Seeds twice on purpose: `addInitScript` covers documents created from here on, and
+   * the `evaluate` covers the one already loaded.
+   */
+  async seedXssProbe(name: string): Promise<void> {
+    await installXssProbe(this.page.context(), name);
+    await this.page.evaluate((n) => {
+      (window as unknown as Record<string, string>)[n] = 'safe';
+    }, name);
   }
 
   /**
