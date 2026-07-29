@@ -6,7 +6,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { Role } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
-import { createHash, timingSafeEqual } from 'node:crypto';
+import { createHash, randomUUID, timingSafeEqual } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto, RegisterDto, UpdateProfileDto } from './dto/auth.dto';
 import { requireSecret } from '../common/env.util';
@@ -25,10 +25,27 @@ export class AuthService {
         secret: requireSecret('JWT_ACCESS_SECRET'),
         expiresIn: process.env.JWT_ACCESS_TTL ?? '900s',
       }),
-      this.jwt.signAsync(payload, {
-        secret: requireSecret('JWT_REFRESH_SECRET'),
-        expiresIn: process.env.JWT_REFRESH_TTL ?? '7d',
-      }),
+      /**
+       * `jti` makes every refresh token unique.
+       *
+       * Without it the payload is fully determined by `{ sub, email, role }` plus
+       * `iat`/`exp`, and those have ONE-SECOND granularity — so issuing and then
+       * rotating inside the same second produced a byte-identical token, signature
+       * included. Rotation silently became a no-op: the caller got back the very
+       * credential it was trying to retire. API-AUTH-P-04 caught this once the suite
+       * got fast enough to round-trip within a second.
+       *
+       * Only the refresh token needs it. Access tokens are never compared or stored,
+       * so two identical ones are indistinguishable from one reused — harmless — and
+       * a `jti` there would just enlarge every request header.
+       */
+      this.jwt.signAsync(
+        { ...payload, jti: randomUUID() },
+        {
+          secret: requireSecret('JWT_REFRESH_SECRET'),
+          expiresIn: process.env.JWT_REFRESH_TTL ?? '7d',
+        },
+      ),
     ]);
     return { accessToken, refreshToken };
   }

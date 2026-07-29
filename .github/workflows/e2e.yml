@@ -115,9 +115,14 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('e2e/package-lock.json') }}
 
+      # ALL THREE engines, not just chromium. playwright.config.ts declares firefox,
+      # webkit, mobile-safari (webkit) and mobile-chrome (chromium) projects, and
+      # run-e2e.mjs passes only `--shard=`, no `--project=` filter — so a shard can be
+      # handed any project. Installing chromium alone failed those specs with
+      # "browserType.launch: Executable doesn't exist at .../webkit-2272".
       - name: Install Playwright browsers
         working-directory: e2e
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium firefox webkit
 
       # The Next build dominates wall-clock (three, @react-three, framer-motion and tiptap),
       # so cache it across runs keyed on the frontend sources.
@@ -191,9 +196,15 @@ jobs:
       - name: Merge into one HTML report and one JSON file
         working-directory: e2e
         run: |
-          npx playwright merge-reports --reporter html,json ./all-blob-reports \
-            > test-results/e2e-results.json || true
+          # `test-results/` is gitignored, so it does NOT exist in a fresh checkout and the
+          # redirect below has nowhere to write. The previous `|| true` then swallowed that
+          # failure, and the error surfaced two steps later as a baffling "Playwright JSON
+          # results not found" from the summary generator. Create it, and let a real merge
+          # failure fail the step instead of hiding it.
+          mkdir -p test-results
           # merge-reports writes the HTML to playwright-report/ and the JSON to stdout.
+          npx playwright merge-reports --reporter html,json ./all-blob-reports \
+            > test-results/e2e-results.json
 
       # Also enforces the known-vulnerability ratchet: the count may fall freely but never rise
       # without someone deliberately raising the baseline in e2e/known-vulnerabilities.json.
