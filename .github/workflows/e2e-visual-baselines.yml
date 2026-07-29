@@ -11,7 +11,9 @@ name: E2E visual baselines
 #
 # Review the diff in the PR before merging: an accepted baseline is an accepted UI change.
 #
-# Required repo secrets: NEON_API_KEY, NEON_PROJECT_ID, E2E_ADMIN_PASSWORD (see e2e.yml).
+# No secrets or external services are required — the stack renders against a throwaway Postgres
+# service container, the same way e2e.yml runs the suite. See that file's header for why the
+# seeded admin password can default.
 
 on:
   workflow_dispatch:
@@ -30,62 +32,67 @@ jobs:
     name: Regenerate baselines
     runs-on: ubuntu-latest
     timeout-minutes: 45
+
+    # Named `utsava_e2e` so it satisfies both positive tests in e2e/scripts/lib/guard.mjs —
+    # a local host AND an `e2e` marker — rather than relying on either alone.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: utsava_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d utsava_e2e"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
     steps:
-      - name: Check the required secrets are configured
-        id: guard
-        run: |
-          if [ -n "${{ secrets.NEON_API_KEY }}" ] \
-             && [ -n "${{ secrets.NEON_PROJECT_ID }}" ] \
-             && [ -n "${{ secrets.E2E_ADMIN_PASSWORD }}" ]; then
-            echo "ok=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "ok=false" >> "$GITHUB_OUTPUT"
-          fi
+      - uses: actions/checkout@v4
 
-      - name: Skip (E2E secrets not set)
-        if: steps.guard.outputs.ok != 'true'
-        run: echo "::warning::E2E secrets not set — cannot boot a stack to render against."
-
-      - name: Checkout
-        if: steps.guard.outputs.ok == 'true'
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        if: steps.guard.outputs.ok == 'true'
-        uses: actions/setup-node@v4
+      # Every lockfile must be listed: there is no package.json at the repo root, so a bare
+      # `cache: npm` cannot resolve one and fails the step outright.
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+            e2e/package-lock.json
 
       - name: Install dependencies
-        if: steps.guard.outputs.ok == 'true'
         run: |
           npm ci --prefix backend
           npm ci --prefix frontend
           npm ci --prefix e2e
 
       - name: Install Playwright browsers
-        if: steps.guard.outputs.ok == 'true'
         working-directory: e2e
         run: npx playwright install --with-deps chromium
 
       - name: Regenerate the baselines
-        if: steps.guard.outputs.ok == 'true'
         working-directory: e2e
         env:
           CI: 'true'
-          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
-          NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
-          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+          E2E_DB_MODE: external
+          E2E_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/utsava_e2e
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD || 'e2e-ci-throwaway-admin-pw' }}
+          # Via env, not interpolated into the script: a workflow_dispatch input spliced
+          # straight into `run:` is a shell-injection vector, even when only maintainers
+          # can dispatch it.
+          GREP: ${{ github.event.inputs.grep }}
         run: |
-          ARGS="--project=visual --update-snapshots"
-          if [ -n "${{ github.event.inputs.grep }}" ]; then
-            ARGS="$ARGS --grep=${{ github.event.inputs.grep }}"
+          ARGS=(--project=visual --update-snapshots)
+          if [ -n "$GREP" ]; then
+            ARGS+=("--grep=$GREP")
           fi
-          node scripts/run-e2e.mjs $ARGS
+          node scripts/run-e2e.mjs "${ARGS[@]}"
 
       - name: Open a pull request with the new baselines
-        if: steps.guard.outputs.ok == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
           branch: chore/e2e-visual-baselines

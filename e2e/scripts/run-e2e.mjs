@@ -67,10 +67,11 @@ async function cleanup(code = 0) {
       console.log(`✓ Deleted Neon branch ${branchName}`);
     } catch (e) {
       console.error(`::error::Failed to delete Neon branch ${branchName}: ${e.message}`);
-      console.error('::error::Run `npm run db:gc` or wait for the scheduled reaper.');
+      // No scheduled reaper any more — CI runs against a service container, so GC is manual.
+      console.error('::error::Run `npm run db:gc` to reap it.');
     }
   } else if (branchId) {
-    console.log(`⚠ E2E_KEEP_BRANCH=1 — ${branchName} left alive. GC reaps it in ~6h.`);
+    console.log(`⚠ E2E_KEEP_BRANCH=1 — ${branchName} left alive. Reap it with \`npm run db:gc\`.`);
   }
 
   process.exit(code);

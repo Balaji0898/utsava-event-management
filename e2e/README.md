@@ -54,11 +54,12 @@ npm run e2e -- --grep @smoke
 
 Four decisions explain most of the structure.
 
-**A Neon branch per run, not a shared test database.** A branch is a copy-on-write fork, so it
-costs seconds and gives byte-identical isolation. Branch names key on
-`(commit, run id, attempt)` — never `Date.now()` — so a retried CI attempt reuses its own branch
-instead of orphaning one. Neon's free plan caps branches per project, which is why
-`e2e-branch-gc.yml` exists and is not optional.
+**A disposable database per run, not a shared test database.** CI uses a Postgres service
+container per shard; locally you can instead use `E2E_DB_MODE=neon` for a copy-on-write branch,
+which costs seconds and gives byte-identical isolation. Branch names key on
+`(commit, run id, attempt)` — never `Date.now()` — so a retried attempt reuses its own branch
+instead of orphaning one. Whichever mode you use, `scripts/lib/guard.mjs` must agree the target
+is disposable before anything runs `migrate reset`.
 
 **An orchestrator script boots the stack, not Playwright's `webServer`.** `webServer` starts
 *before* `globalSetup`, but the database does not exist until the branch is created and seeded,
@@ -267,13 +268,19 @@ assert the **current** behaviour, so a fix turns the test red and has to be ackn
 
 | Workflow | Trigger | What it does |
 |---|---|---|
-| `e2e.yml` | push + PR to `main`, `workflow_dispatch` | Provision a branch → boot the stack per shard (×3) → run → merge reports → delete the branch |
-| `e2e-branch-gc.yml` | every 6h | Reap orphaned `e2e/*` branches — `if: always()` does not fire on a hard cancel |
+| `e2e.yml` | push + PR to `main`, `workflow_dispatch` | Per shard (×3): start a Postgres service container → migrate + seed → boot the stack → run → merge reports |
 | `e2e-visual-baselines.yml` | manual | Regenerate Linux baselines and open a PR |
 
-Secrets: `NEON_API_KEY`, `NEON_PROJECT_ID`, `E2E_ADMIN_PASSWORD`. Without them the workflow
-emits a `::warning::` and skips, rather than failing red — matching the house style of the two
-existing deploy workflows.
+**CI needs no secrets and no external database.** Both workflows render against a throwaway
+Postgres service container that lives and dies with the job, so the suite runs on a fresh clone
+with zero configuration. `E2E_ADMIN_PASSWORD` is honoured as a repo secret if set, but defaults
+otherwise — safe because that database is unreachable from outside the runner.
+
+CI does not use Neon at all. Branch-per-run remains available for *local* runs (see
+`E2E_DB_MODE=neon` and the `db:*` scripts); it was dropped from CI because the secrets were
+never configured, so every run skipped and reported green without executing a test. That also
+retired the scheduled branch reaper, which existed only because a hard-cancelled runner leaked
+a branch against the free plan's per-project quota.
 
 **`e2e.yml` is warn-only by default.** Set the `E2E_BLOCKING` repo variable to `'true'` once it
 has been green for a few days.
