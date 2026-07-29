@@ -1,0 +1,309 @@
+name: E2E (Playwright)
+
+# Boots an ephemeral full stack inside the runner against a throwaway Neon branch, then runs
+# the Playwright suite (UI E2E + API contract + security regression + a11y + visual) against
+# localhost. Nothing here ever touches the production database.
+#
+# Required repo secrets:
+#   NEON_API_KEY       → neon.tech → Account settings → API keys
+#   NEON_PROJECT_ID    → neon.tech → your project → Settings → General
+#   E2E_ADMIN_PASSWORD → any value >= 8 chars. Injected as SEED_ADMIN_PASSWORD so the seeded
+#                        SUPER_ADMIN has a password the suite can actually log in with.
+#                        (backend/prisma/seed.ts generates a random one below 8 chars and
+#                        prints it only once, which CI cannot read back.)
+#
+# Optional repo secrets:
+#   NEON_PARENT_BRANCH_ID → branch to fork from (defaults to the project's primary branch)
+#
+# Optional repo variables:
+#   E2E_BLOCKING = 'true' → a failing suite fails the workflow. Default: warn only, so this
+#                           can land without blocking the current push-to-main flow.
+#   E2E_SHARDS            → shard count, default 3
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'e2e/**'
+      - '.github/workflows/e2e.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'e2e/**'
+      - '.github/workflows/e2e.yml'
+  workflow_dispatch:
+
+# A newer push supersedes an in-flight run — but never cancel on main, or the Neon branch
+# cleanup step never gets to run and the free-plan branch quota leaks.
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Provision one throwaway Neon branch for the whole run.
+  # ---------------------------------------------------------------------------
+  provision:
+    name: Provision test database
+    runs-on: ubuntu-latest
+    outputs:
+      ok: ${{ steps.guard.outputs.ok }}
+      branch: ${{ steps.branch.outputs.branch_name }}
+    steps:
+      - name: Check the required secrets are configured
+        id: guard
+        run: |
+          if [ -n "${{ secrets.NEON_API_KEY }}" ] \
+             && [ -n "${{ secrets.NEON_PROJECT_ID }}" ] \
+             && [ -n "${{ secrets.E2E_ADMIN_PASSWORD }}" ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Skip (E2E secrets not set)
+        if: steps.guard.outputs.ok != 'true'
+        run: |
+          echo "::warning::NEON_API_KEY / NEON_PROJECT_ID / E2E_ADMIN_PASSWORD not set — skipping the E2E suite."
+          echo "::warning::See the header of .github/workflows/e2e.yml for where to get each value."
+
+      - name: Checkout
+        if: steps.guard.outputs.ok == 'true'
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        if: steps.guard.outputs.ok == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+
+      - name: Install E2E dependencies
+        if: steps.guard.outputs.ok == 'true'
+        working-directory: e2e
+        run: npm ci
+
+      # Reap first: `if: always()` does not fire on every runner abort, so a cancelled run can
+      # leak a branch. The free plan caps branches per project, so this is not optional.
+      - name: Reap stale e2e branches
+        if: steps.guard.outputs.ok == 'true'
+        working-directory: e2e
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
+        run: npm run db:gc
+
+      - name: Create the Neon branch
+        id: branch
+        if: steps.guard.outputs.ok == 'true'
+        working-directory: e2e
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
+          NEON_PARENT_BRANCH_ID: ${{ secrets.NEON_PARENT_BRANCH_ID }}
+        run: node scripts/db-branch.mjs create
+
+      # A Neon branch arrives holding whatever its parent held, so the reset is what makes the
+      # fixtures deterministic. Runs ONCE here rather than per shard.
+      - name: Migrate and seed
+        if: steps.guard.outputs.ok == 'true'
+        working-directory: e2e
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+        run: |
+          # The URI is re-derived from the branch NAME rather than passed as a job output:
+          # job outputs are unmasked and would print the database credential into the log.
+          DATABASE_URL="$(node scripts/db-branch.mjs uri)"
+          E2E_DATABASE_URL="$DATABASE_URL" node scripts/prepare-db.mjs
+
+  # ---------------------------------------------------------------------------
+  # Boot the stack per shard and run the suite.
+  # ---------------------------------------------------------------------------
+  test:
+    name: Test (shard ${{ matrix.shard }}/${{ strategy.job-total }})
+    needs: provision
+    if: needs.provision.outputs.ok == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: |
+          npm ci --prefix backend
+          npm ci --prefix frontend
+          npm ci --prefix e2e
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('e2e/package-lock.json') }}
+
+      - name: Install Playwright browsers
+        working-directory: e2e
+        run: npx playwright install --with-deps chromium
+
+      # The Next build dominates wall-clock (three, @react-three, framer-motion and tiptap),
+      # so cache it across runs keyed on the frontend sources.
+      - name: Cache the Next build
+        uses: actions/cache@v4
+        with:
+          path: frontend/.next/cache
+          key: next-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}-${{ hashFiles('frontend/src/**') }}
+          restore-keys: |
+            next-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}-
+
+      # `run-e2e.mjs` owns the whole lifecycle: derive the branch URI, boot backend + frontend,
+      # health-gate both, run Playwright, then stop the stack. E2E_KEEP_BRANCH=1 because the
+      # cleanup job below deletes the branch once — not once per shard.
+      - name: Run the suite
+        working-directory: e2e
+        env:
+          CI: 'true'
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+          E2E_KEEP_BRANCH: '1'
+          E2E_SKIP_DB: '0'
+        run: |
+          # The database is already migrated and seeded by the provision job, so skip that here
+          # and only boot the stack.
+          DATABASE_URL="$(node scripts/db-branch.mjs uri)"
+          E2E_DATABASE_URL="$DATABASE_URL" \
+            node scripts/run-e2e.mjs --shard=${{ matrix.shard }}/${{ strategy.job-total }}
+
+      - name: Upload the blob report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: blob-report-${{ matrix.shard }}
+          path: e2e/blob-report/
+          retention-days: 7
+
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failure-artifacts-${{ matrix.shard }}
+          path: |
+            e2e/test-results/
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # Merge the shard reports and publish the summary.
+  # ---------------------------------------------------------------------------
+  report:
+    name: Merge reports
+    needs: test
+    if: ${{ !cancelled() && needs.provision.outputs.ok == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+
+      - name: Install E2E dependencies
+        working-directory: e2e
+        run: npm ci
+
+      - name: Download the blob reports
+        uses: actions/download-artifact@v4
+        with:
+          path: e2e/all-blob-reports
+          pattern: blob-report-*
+          merge-multiple: true
+
+      - name: Merge into one HTML report and one JSON file
+        working-directory: e2e
+        run: |
+          npx playwright merge-reports --reporter html,json ./all-blob-reports \
+            > test-results/e2e-results.json || true
+          # merge-reports writes the HTML to playwright-report/ and the JSON to stdout.
+
+      # Also enforces the known-vulnerability ratchet: the count may fall freely but never rise
+      # without someone deliberately raising the baseline in e2e/known-vulnerabilities.json.
+      - name: Generate the markdown summary and check the security ratchet
+        working-directory: e2e
+        env:
+          # Only enforced here, after every shard has been merged. A single shard sees a fraction
+          # of the suite, so comparing its vulnerability count to the baseline would be meaningless.
+          E2E_ENFORCE_RATCHET: '1'
+        run: npm run report
+
+      - name: Generate the standalone HTML summary
+        working-directory: e2e
+        run: npm run report:html || true
+
+      - name: Upload the reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            e2e/playwright-report/
+            e2e/test-results/e2e-summary.md
+            e2e/test-results/e2e-report.html
+          retention-days: 14
+
+      # Default is warn-only so the suite can land without blocking today's push-to-main flow.
+      # Flip the E2E_BLOCKING repo variable to 'true' once it has been green for a few days.
+      - name: Gate the workflow on the result
+        if: ${{ needs.test.result != 'success' }}
+        run: |
+          if [ "${{ vars.E2E_BLOCKING }}" = "true" ]; then
+            echo "::error::The E2E suite failed and E2E_BLOCKING is enabled."
+            exit 1
+          fi
+          echo "::warning::The E2E suite failed. Set the E2E_BLOCKING repo variable to 'true' to make this fail the build."
+
+  # ---------------------------------------------------------------------------
+  # Always destroy the branch. `if: always()` plus the scheduled reaper as backstop.
+  # ---------------------------------------------------------------------------
+  cleanup:
+    name: Delete the test database
+    needs: [provision, test]
+    if: ${{ always() && needs.provision.outputs.ok == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+
+      - name: Install E2E dependencies
+        working-directory: e2e
+        run: npm ci
+
+      - name: Delete the Neon branch
+        working-directory: e2e
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
+        run: npm run db:delete
