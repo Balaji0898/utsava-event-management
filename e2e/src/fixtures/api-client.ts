@@ -43,17 +43,31 @@ export class ApiClient {
      * module-level `run.ipPartition` inside `headers()` would ignore the clone.
      */
     private readonly ipPartition: boolean = run.ipPartition,
+    /**
+     * Last octet of the throttler bucket — see `forwardedFor`. 1-254; the fixtures
+     * derive it from the test id so each test gets its own rate-limit budget.
+     */
+    private readonly bucket: number = 1,
   ) {}
 
   // ------------------------------------------------------------------ plumbing
 
   /**
-   * A private /8 address unique to this worker. Deliberately RFC1918 so it can
-   * never be mistaken for a real client, and stable across a worker's lifetime so
-   * the bucket is consistent within a spec file.
+   * A private /8 address unique to this worker AND this test. Deliberately RFC1918
+   * so it can never be mistaken for a real client.
+   *
+   * Per-test, not merely per-worker. A shared per-worker bucket meant the tight
+   * limits — `POST /auth/register` 5/min, `POST /auth/login` 10/min — were consumed
+   * collectively, so a spec failed with a 429 it had no part in causing: the victim
+   * was whichever test happened to run when the bucket emptied. API-UPL-S-05 and
+   * API-AUTH-N-02 both failed that way, neither of them calling the route it was
+   * throttled on. Isolating per test makes each one's budget its own.
+   *
+   * The rate-limit specs deliberately need a SHARED bucket to observe a real 429, and
+   * they already opt out through `withoutIpPartition()`, so they are unaffected.
    */
   get forwardedFor(): string {
-    return `10.42.${this.workerIndex % 254}.1`;
+    return `10.42.${this.workerIndex % 254}.${this.bucket}`;
   }
 
   private headers(extra: Record<string, string> = {}): Record<string, string> {
@@ -71,7 +85,7 @@ export class ApiClient {
 
   /** A clone with a different token — for RBAC sweeps that need several identities. */
   as(token: string | null): ApiClient {
-    return new ApiClient(this.request, this.workerIndex, token, this.ipPartition);
+    return new ApiClient(this.request, this.workerIndex, token, this.ipPartition, this.bucket);
   }
 
   /**
@@ -79,7 +93,7 @@ export class ApiClient {
    * real-IP bucket. The throttling specs need this to observe a genuine 429.
    */
   withoutIpPartition(): ApiClient {
-    return new ApiClient(this.request, this.workerIndex, this.token, false);
+    return new ApiClient(this.request, this.workerIndex, this.token, false, this.bucket);
   }
 
   private url(path: string): string {

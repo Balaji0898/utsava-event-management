@@ -34,8 +34,22 @@ test.describe('Login - positive cases', () => {
     await loginPage.expectSessionStored();
   });
 
-  test('LOGIN-P-03 disables the button and relabels it while submitting', async ({ loginPage }) => {
+  test('LOGIN-P-03 disables the button and relabels it while submitting', async ({ loginPage, page }) => {
     test.skip(!hasAdminCredentials(), 'admin credentials missing');
+
+    /**
+     * Hold the response open so the in-flight state is actually observable.
+     *
+     * `disabled={isSubmitting}` is correct in the component, but against a stack on
+     * localhost the round-trip finishes in single-digit milliseconds — faster than the
+     * assertion can sample, so racing `expectSubmitting()` against `submit()` in a
+     * `Promise.all` failed with the button already back to "Sign in". Delaying the
+     * login response makes the window deterministic instead of hoping to catch it.
+     */
+    await page.route(apiRoute('/auth/login'), async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 1_000));
+      await route.continue();
+    });
 
     await loginPage.fill(admin.email, admin.password);
     await Promise.all([loginPage.expectSubmitting(), loginPage.submit()]);

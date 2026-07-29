@@ -3,7 +3,6 @@ import { AdminPage } from '../admin.page';
 import { tid } from '@config/testids';
 import { paths } from '@config/urls';
 import { messages } from '@data/test-data';
-import { Dialogs } from '@fixtures/dialogs';
 import { PaginationComponent } from '@components/pagination.component';
 
 /**
@@ -66,15 +65,15 @@ export class AdminVendorsListPage extends AdminPage {
     await expect(this.page).toHaveURL(new RegExp(`/admin/vendors/${id}$`));
   }
 
-  async deleteVendor(id: string, dialogs?: Dialogs): Promise<void> {
-    const handler = dialogs ?? new Dialogs(this.page);
+  async deleteVendor(id: string): Promise<void> {
+    const handler = this.dialogs;
     handler.acceptOnce();
     await this.deleteButton(id).click();
     await expect(this.row(id)).toHaveCount(0, { timeout: 30_000 });
   }
 
-  async cancelDelete(id: string, dialogs?: Dialogs): Promise<void> {
-    const handler = dialogs ?? new Dialogs(this.page);
+  async cancelDelete(id: string): Promise<void> {
+    const handler = this.dialogs;
     handler.dismissAll();
     await this.deleteButton(id).click();
     await expect(this.row(id)).toBeVisible();

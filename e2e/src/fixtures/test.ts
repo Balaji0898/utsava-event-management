@@ -2,7 +2,6 @@ import { test as base, expect, type BrowserContext, type Page } from '@playwrigh
 import path from 'path';
 
 import { ApiClient } from './api-client';
-import { Dialogs } from './dialogs';
 import { Axe } from './axe';
 import { applyDefaultInitScripts, installXssProbe } from './init-scripts';
 import { mockThirdParties, stubRemoteImages } from './network';
@@ -27,6 +26,20 @@ import {
 } from '@pages/index';
 
 const ADMIN_STATE = path.resolve(__dirname, '../../playwright/.auth/admin.json');
+
+/**
+ * Throttler-bucket octet for one test: 1-254, see `ApiClient.forwardedFor`.
+ *
+ * Derived from the test id rather than a counter, so it is STABLE across retries —
+ * a retry that landed in a fresh bucket would mask a genuine rate-limit failure —
+ * while still distinct between tests, which is what stops one spec from spending
+ * another's `register` or `login` budget.
+ */
+function bucketFor(testId: string): number {
+  let hash = 0;
+  for (const ch of testId) hash = (hash * 31 + ch.charCodeAt(0)) % 254;
+  return hash + 1;
+}
 
 /**
  * The single import point for every spec.
@@ -66,8 +79,6 @@ type Fixtures = {
   api: ApiClient;
   /** Unauthenticated API client — for RBAC and public-endpoint cases. */
   anonApi: ApiClient;
-  /** Native confirm/prompt handling. */
-  dialogs: Dialogs;
   /** axe-core scanner with the known-violation register applied. */
   axe: Axe;
   /** Prefixed record creation with automatic teardown. */
@@ -171,13 +182,13 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
     test.skip(!hasAdminCredentials(), 'E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD missing — see e2e/.env.example');
 
     const ctx = await playwright.request.newContext({ baseURL: urls.api });
-    await use(new ApiClient(ctx, testInfo.workerIndex, adminToken));
+    await use(new ApiClient(ctx, testInfo.workerIndex, adminToken, undefined, bucketFor(testInfo.testId)));
     await ctx.dispose();
   },
 
   anonApi: async ({ playwright }, use, testInfo) => {
     const ctx = await playwright.request.newContext({ baseURL: urls.api });
-    await use(new ApiClient(ctx, testInfo.workerIndex, null));
+    await use(new ApiClient(ctx, testInfo.workerIndex, null, undefined, bucketFor(testInfo.testId)));
     await ctx.dispose();
   },
 
@@ -242,11 +253,16 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
   // capabilities
   // ---------------------------------------------------------------------------
 
-  dialogs: async ({ page }, use) => {
-    const dialogs = new Dialogs(page);
-    await use(dialogs);
-    dialogs.dispose();
-  },
+  /**
+   * REMOVED — use `<pageObject>.dialogs` instead.
+   *
+   * A fixture cannot know which page it belongs to. This one bound to the default
+   * `page`, while every admin spec drives `adminPage` — a different `Page` in a
+   * different context. The listener was registered where the dialog never fired,
+   * Playwright auto-dismissed the real `confirm()`, and the admin UI's `remove()`
+   * returned early without deleting. `BasePage.dialogs` is bound to its own page by
+   * construction, so it cannot be wired to the wrong one.
+   */
 
   axe: async ({ page }, use) => use(new Axe(page)),
 

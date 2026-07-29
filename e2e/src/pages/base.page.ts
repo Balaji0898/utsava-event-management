@@ -1,4 +1,5 @@
 import { expect, type Locator, type Page, type Response } from '@playwright/test';
+import { Dialogs } from '@fixtures/dialogs';
 import { tid } from '@config/testids';
 import { paths } from '@config/urls';
 import { revalidateSecret } from '@config/env';
@@ -20,6 +21,28 @@ export abstract class BasePage {
 
   /** Route this page object represents, e.g. `/vendors`. */
   abstract get path(): string;
+
+  private dialogHandler: Dialogs | null = null;
+
+  /**
+   * Native `confirm()`/`prompt()` handling bound to THIS page.
+   *
+   * Deliberately owned by the page object rather than supplied by a fixture. A
+   * fixture cannot know which page it is for, and the admin specs run against
+   * `adminPage` — a different `Page` in a different `BrowserContext` from the
+   * default `page`. A `Dialogs` built on the wrong one registers its listener
+   * where the dialog never fires, Playwright then auto-dismisses the real
+   * `confirm()`, and `remove()` in the admin UI silently returns without
+   * deleting anything. That is exactly how ADMDEPT-P-04 failed, and how
+   * ADMDEPT-N-02 passed for the wrong reason — its expected dismiss coincided
+   * with the accidental one.
+   *
+   * Bound to `this.page` by construction, so it cannot be wired to the wrong one.
+   */
+  get dialogs(): Dialogs {
+    this.dialogHandler ??= new Dialogs(this.page);
+    return this.dialogHandler;
+  }
 
   // ---------------------------------------------------------------- navigation
 

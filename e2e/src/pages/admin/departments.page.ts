@@ -3,7 +3,6 @@ import { AdminPage } from '../admin.page';
 import { tid } from '@config/testids';
 import { paths } from '@config/urls';
 import { messages } from '@data/test-data';
-import { Dialogs } from '@fixtures/dialogs';
 import { UploaderComponent } from '@components/uploader.component';
 
 /**
@@ -164,16 +163,16 @@ export class AdminDepartmentsPage extends AdminPage {
    * `acceptOnce` rather than `acceptAll`: a second unexpected confirm should hang the
    * test visibly instead of silently deleting another record.
    */
-  async deleteDepartment(id: string, dialogs?: Dialogs): Promise<void> {
-    const handler = dialogs ?? new Dialogs(this.page);
+  async deleteDepartment(id: string): Promise<void> {
+    const handler = this.dialogs;
     handler.acceptOnce();
     await this.deleteButton(id).click();
     await expect(this.row(id)).toHaveCount(0, { timeout: 30_000 });
   }
 
   /** Cancel the confirm — the row must survive. */
-  async cancelDelete(id: string, dialogs?: Dialogs): Promise<void> {
-    const handler = dialogs ?? new Dialogs(this.page);
+  async cancelDelete(id: string): Promise<void> {
+    const handler = this.dialogs;
     handler.dismissAll();
     await this.deleteButton(id).click();
     await expect(this.row(id)).toBeVisible();

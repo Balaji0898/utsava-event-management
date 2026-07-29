@@ -81,7 +81,6 @@ test.describe('Journey - review moderation', () => {
     cmsPage,
     api,
     factory,
-    dialogs,
   }) => {
     /**
      * "Reject" is a DELETE behind `confirm('Delete testimonial?')`, not a status flip — so a
@@ -99,7 +98,7 @@ test.describe('Journey - review moderation', () => {
 
     await cmsPage.open();
     await cmsPage.openTab('testimonials');
-    await cmsPage.rejectTestimonial(submitted!.id, dialogs);
+    await cmsPage.rejectTestimonial(submitted!.id);
 
     /** Gone from the database entirely, not merely hidden. */
     const after = await api.json<{ id: string }[]>(apiPaths.cms.testimonialsAll);

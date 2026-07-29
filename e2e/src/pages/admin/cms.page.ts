@@ -3,7 +3,6 @@ import { AdminPage } from '../admin.page';
 import { tid } from '@config/testids';
 import { paths } from '@config/urls';
 import { messages } from '@data/test-data';
-import { Dialogs } from '@fixtures/dialogs';
 import { RichTextEditorComponent } from '@components/rich-text-editor.component';
 import { UploaderComponent } from '@components/uploader.component';
 
@@ -127,8 +126,8 @@ export class AdminCmsPage extends AdminPage {
   }
 
   /** `Reject` is a DELETE behind `confirm('Delete testimonial?')`, not a status flip. */
-  async rejectTestimonial(id: string, dialogs?: Dialogs): Promise<void> {
-    const handler = dialogs ?? new Dialogs(this.page);
+  async rejectTestimonial(id: string): Promise<void> {
+    const handler = this.dialogs;
     handler.acceptOnce();
     await this.rejectButton(id).click();
     await expect(this.testimonialRow(id)).toHaveCount(0, { timeout: 30_000 });
@@ -176,8 +175,8 @@ export class AdminCmsPage extends AdminPage {
     await expect(this.faqRowByQuestion(values.question).first()).toBeVisible({ timeout: 30_000 });
   }
 
-  async deleteFaq(id: string, dialogs?: Dialogs): Promise<void> {
-    const handler = dialogs ?? new Dialogs(this.page);
+  async deleteFaq(id: string): Promise<void> {
+    const handler = this.dialogs;
     handler.acceptOnce();
     await this.deleteFaqButton(id).click();
     await expect(this.faqRow(id)).toHaveCount(0, { timeout: 30_000 });

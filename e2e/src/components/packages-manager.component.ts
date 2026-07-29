@@ -21,6 +21,14 @@ import { Dialogs } from '@fixtures/dialogs';
 export class PackagesManagerComponent {
   constructor(private readonly page: Page) {}
 
+  private dialogHandler: Dialogs | null = null;
+
+  /** Bound to THIS page by construction — see the note on `BasePage.dialogs`. */
+  get dialogs(): Dialogs {
+    this.dialogHandler ??= new Dialogs(this.page);
+    return this.dialogHandler;
+  }
+
   get root(): Locator {
     return this.page.getByTestId(tid.pkg.manager);
   }
@@ -84,8 +92,8 @@ export class PackagesManagerComponent {
     await this.addButton.click();
   }
 
-  async deletePackage(id: string, dialogs?: Dialogs): Promise<void> {
-    const handler = dialogs ?? new Dialogs(this.page);
+  async deletePackage(id: string): Promise<void> {
+    const handler = this.dialogs;
     handler.acceptOnce();
     await this.deleteButton(id).click();
     await expect(this.row(id)).toHaveCount(0, { timeout: 30_000 });

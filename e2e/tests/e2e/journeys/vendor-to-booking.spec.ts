@@ -137,7 +137,6 @@ test.describe('Journey - admin creates a vendor, a customer books it', () => {
     factory,
     bookingsPage,
     adminVendorsPage,
-    dialogs,
   }) => {
     /**
      * A commercially important cascade decision: `Booking.vendorId` and `packageId` are
@@ -151,7 +150,7 @@ test.describe('Journey - admin creates a vendor, a customer books it', () => {
     const booking = await factory.createBooking({ vendorId: vendor.id, packageId: pkg.id, customerEmail: email });
 
     await adminVendorsPage.open();
-    await adminVendorsPage.deleteVendor(vendor.id, dialogs);
+    await adminVendorsPage.deleteVendor(vendor.id);
 
     const after = await api.json<{ status: string; vendorId: string | null; packageId: string | null }>(
       apiPaths.bookings.one(booking.id),

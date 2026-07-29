@@ -122,26 +122,24 @@ test.describe('Admin departments', () => {
   test('ADMDEPT-P-04 deletes a department after confirming @smoke', async ({
     departmentsPage,
     factory,
-    dialogs,
   }) => {
     const department = await factory.createDepartment();
 
     await departmentsPage.open();
-    await departmentsPage.deleteDepartment(department.id, dialogs);
+    await departmentsPage.deleteDepartment(department.id);
 
-    expect(dialogs.lastMessage, 'the native confirm text').toBe(messages.admin.departments.confirmDelete);
+    expect(departmentsPage.dialogs.lastMessage, 'the native confirm text').toBe(messages.admin.departments.confirmDelete);
     await departmentsPage.expectDoesNotContain(department.name);
   });
 
   test('ADMDEPT-N-02 cancelling the confirm leaves the row intact', async ({
     departmentsPage,
     factory,
-    dialogs,
   }) => {
     const department = await factory.createDepartment();
 
     await departmentsPage.open();
-    await departmentsPage.cancelDelete(department.id, dialogs);
+    await departmentsPage.cancelDelete(department.id);
     await departmentsPage.expectContains(department.name);
   });
 
@@ -149,7 +147,6 @@ test.describe('Admin departments', () => {
     departmentsPage,
     factory,
     api,
-    dialogs,
   }) => {
     /**
      * The cascade the confirm dialog does NOT mention. "Delete this department?" removes every
@@ -163,7 +160,7 @@ test.describe('Admin departments', () => {
     await departmentsPage.open();
     await departmentsPage.expectVendorCount(department.id, 1);
 
-    await departmentsPage.deleteDepartment(department.id, dialogs);
+    await departmentsPage.deleteDepartment(department.id);
 
     expect((await api.get(apiPaths.vendors.one(vendor.id))).status(), 'the vendor is gone').toBe(404);
     expect((await api.get(apiPaths.packages.one(pkg.id))).status(), 'the package is gone').toBe(404);
@@ -269,14 +266,13 @@ test.describe('Admin vendors', () => {
   test('ADMVEND-P-05 deletes a vendor after confirming its cascade @smoke', async ({
     adminVendorsPage,
     factory,
-    dialogs,
   }) => {
     const vendor = await factory.createVendor();
 
     await adminVendorsPage.open();
-    await adminVendorsPage.deleteVendor(vendor.id, dialogs);
+    await adminVendorsPage.deleteVendor(vendor.id);
 
-    expect(dialogs.lastMessage).toBe(messages.admin.vendors.confirmDelete);
+    expect(adminVendorsPage.dialogs.lastMessage).toBe(messages.admin.vendors.confirmDelete);
   });
 
   test('ADMVEND-A-01 the vendor form is fully label-associated after Phase 3', async ({ vendorFormPage }) => {
@@ -345,14 +341,14 @@ test.describe('Admin packages', () => {
     await vendorFormPage.packages.expectPopular(created!.id);
   });
 
-  test('ADMPKG-P-03 deletes a package after confirming', async ({ vendorFormPage, factory, dialogs, api }) => {
+  test('ADMPKG-P-03 deletes a package after confirming', async ({ vendorFormPage, factory, api }) => {
     const vendor = await factory.createVendor();
     const pkg = await factory.createPackage(vendor.id);
 
     await vendorFormPage.openEdit(vendor.id);
-    await vendorFormPage.packages.deletePackage(pkg.id, dialogs);
+    await vendorFormPage.packages.deletePackage(pkg.id);
 
-    expect(dialogs.lastMessage).toBe(messages.admin.packages.confirmDelete);
+    expect(vendorFormPage.packages.dialogs.lastMessage).toBe(messages.admin.packages.confirmDelete);
     expect((await api.get(apiPaths.packages.one(pkg.id))).status()).toBe(404);
   });
 });
@@ -449,7 +445,7 @@ test.describe('Admin CMS', () => {
     await cmsPage.expectTabsNotDeepLinkable();
   });
 
-  test('ADMCMS-P-02 adds and deletes an FAQ', async ({ cmsPage, factory, api, dialogs }) => {
+  test('ADMCMS-P-02 adds and deletes an FAQ', async ({ cmsPage, factory, api }) => {
     const question = `${factory.name('FaqCreate')}?`;
 
     await cmsPage.open();
@@ -459,8 +455,8 @@ test.describe('Admin CMS', () => {
     const created = faqs.find((f) => f.question === question);
     expect(created).toBeTruthy();
 
-    await cmsPage.deleteFaq(created!.id, dialogs);
-    expect(dialogs.lastMessage).toBe(messages.admin.cms.faqs.confirmDelete);
+    await cmsPage.deleteFaq(created!.id);
+    expect(cmsPage.dialogs.lastMessage).toBe(messages.admin.cms.faqs.confirmDelete);
   });
 
   test('ADMCMS-P-03 the Saved indicator appears then expires after two seconds', async ({

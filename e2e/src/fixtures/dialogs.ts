@@ -110,7 +110,16 @@ export class Dialogs {
  */
 export function failOnAlert(page: Page, onDetected: (message: string) => void): void {
   page.on('dialog', (dialog) => {
-    if (dialog.type() === 'alert') onDetected(dialog.message());
+    /**
+     * ONLY alerts. The dismiss used to sit outside this check, so this handler
+     * answered every dialog on the page — including the `confirm()` behind all five
+     * destructive admin actions. Whichever listener won the race decided the
+     * outcome, and a dismissed confirm makes the admin UI return early without
+     * deleting: a silent no-op. Leave every other type to the `Dialogs` handler
+     * that the page object owns.
+     */
+    if (dialog.type() !== 'alert') return;
+    onDetected(dialog.message());
     void dialog.dismiss();
   });
 }

@@ -28,6 +28,14 @@ import { Dialogs } from '@fixtures/dialogs';
 export class RichTextEditorComponent {
   constructor(private readonly page: Page) {}
 
+  private dialogHandler: Dialogs | null = null;
+
+  /** Bound to THIS page by construction — see the note on `BasePage.dialogs`. */
+  get dialogs(): Dialogs {
+    this.dialogHandler ??= new Dialogs(this.page);
+    return this.dialogHandler;
+  }
+
   get root(): Locator {
     return this.page.getByTestId(tid.cms.legal.editor);
   }
@@ -73,8 +81,8 @@ export class RichTextEditorComponent {
    * worth passing here deliberately — the sanitizer is supposed to strip them on
    * the public render.
    */
-  async insertLink(url: string, dialogs?: Dialogs): Promise<void> {
-    const handler = dialogs ?? new Dialogs(this.page);
+  async insertLink(url: string): Promise<void> {
+    const handler = this.dialogs;
     handler.acceptOnce(url);
     await this.toolbarButton('Link').click();
   }
