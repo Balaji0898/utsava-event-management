@@ -96,7 +96,20 @@ export default defineConfig({
   maxFailures: isCI ? 40 : 0,
 
   outputDir: 'test-results/artifacts',
-  snapshotPathTemplate: '{testFileDir}/__screenshots__/{testFileName}/{arg}-{projectName}-{platform}{ext}',
+  /**
+   * `{testDir}` is required here, not optional decoration.
+   *
+   * `{testFileDir}` is the path FROM testDir to the spec's directory — `visual`, not
+   * `tests/visual` — and a relative template resolves against the config directory. So
+   * the old value wrote baselines to `e2e/visual/__screenshots__/...`, while both
+   * .gitignore files and `e2e-visual-baselines.yml`'s `add-paths` all describe a location
+   * under `e2e/tests/`. Nothing matched, so `git add` picked up nothing, the
+   * PR step reported "not ahead of base" and the workflow finished GREEN having produced
+   * no PR at all — twice. Anchoring on {testDir} puts the images beside their spec, which
+   * is what the rest of the repo already assumes.
+   */
+  snapshotPathTemplate:
+    '{testDir}/{testFileDir}/__screenshots__/{testFileName}/{arg}-{projectName}-{platform}{ext}',
 
   reporter,
 

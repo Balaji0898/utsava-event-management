@@ -31,7 +31,15 @@ export const CACHE_TAGS = {
   cms: 'cms',
 } as const;
 
-type FetchOptions = RequestInit & { auth?: boolean };
+type FetchOptions = RequestInit & {
+  auth?: boolean;
+  /**
+   * Optional deadline in ms. Without one, a cold/hanging backend leaves the
+   * returned promise pending indefinitely — and any loading UI awaiting it
+   * spinning forever. Ignored when the caller passes its own `signal`.
+   */
+  timeoutMs?: number;
+};
 
 function getToken() {
   if (typeof window === 'undefined') return null;
@@ -127,18 +135,29 @@ export async function api<T = any>(
   options: FetchOptions = {},
   _retried = false,
 ): Promise<T> {
-  const { auth: useAuth, headers, ...rest } = options;
+  const { auth: useAuth, headers, timeoutMs, ...rest } = options;
   const token = useAuth ? getToken() : null;
 
-  const res = await fetch(apiUrl(path), {
-    ...rest,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...headers,
-    },
-    cache: 'no-store',
-  });
+  // Abort after `timeoutMs` when asked to (see FetchOptions.timeoutMs). A
+  // caller-supplied signal always wins.
+  const controller = timeoutMs && !rest.signal ? new AbortController() : null;
+  const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+
+  let res: Response;
+  try {
+    res = await fetch(apiUrl(path), {
+      ...rest,
+      signal: controller?.signal ?? rest.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...headers,
+      },
+      cache: 'no-store',
+    });
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 
   // Access token expired/blocked → try one refresh + retry, then give up.
   // Exclude only the endpoints that must never trigger a refresh (would recurse

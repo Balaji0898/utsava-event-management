@@ -110,18 +110,39 @@ jobs:
             echo "PARTIAL=1" >> "$GITHUB_ENV"
           fi
 
-      # Makes the outcome legible without downloading anything: which baselines exist now.
+      # Makes the outcome legible without downloading anything, and refuses to finish green
+      # having produced nothing — which is exactly how two 20-minute runs were wasted: the
+      # snapshots landed outside the path `add-paths` watched, so `git add` matched nothing,
+      # the PR step said "not ahead of base", and the workflow reported success with no PR.
       - name: List the baselines that were written
         run: |
+          mapfile -t shots < <(find e2e -path '*__screenshots__*' -name '*.png' | sort)
+
           echo "### Visual baselines present after this run" >> "$GITHUB_STEP_SUMMARY"
           if [ -n "${PARTIAL:-}" ]; then
             echo "" >> "$GITHUB_STEP_SUMMARY"
             echo ":warning: **Partial** — some specs did not stabilise, so their baselines are absent." >> "$GITHUB_STEP_SUMMARY"
           fi
           echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "${#shots[@]} baseline(s) on disk:" >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
-          find e2e/tests -path '*__screenshots__*' -name '*.png' -printf '%f\n' 2>/dev/null | sort >> "$GITHUB_STEP_SUMMARY" || true
+          printf '%s\n' "${shots[@]}" >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "${#shots[@]}" -eq 0 ]; then
+            echo "::error::No baseline PNGs were produced anywhere under e2e/. There is nothing for the PR step to commit, so failing here rather than reporting a green run that changed nothing."
+            exit 1
+          fi
+
+          # A path outside add-paths would be committed by nobody, silently. Catch it here.
+          outside=0
+          for s in "${shots[@]}"; do
+            case "$s" in
+              e2e/tests/*) ;;
+              *) echo "::error::Baseline written outside e2e/tests/, so add-paths will not commit it: $s"; outside=1 ;;
+            esac
+          done
+          [ "$outside" -eq 0 ] || exit 1
 
       - name: Open a pull request with the new baselines
         uses: peter-evans/create-pull-request@v6
