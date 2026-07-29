@@ -29,10 +29,10 @@ export const site = {
  * /vendors?radius=. The locale files reference it through a {{radius}}
  * placeholder, so changing this number also updates the visible copy.
  *
- * The backend keeps its own fallback for requests that omit ?radius= (see
- * DEFAULT_NEARBY_RADIUS_KM in vendors.service.ts) — frontend and backend are
- * separate deployables with no shared package, so the two cannot import one
- * value.
+ * Must stay in sync with DEFAULT_NEARBY_RADIUS_KM in the backend's
+ * vendors.service.ts, which applies the same radius to requests that omit
+ * ?radius=. The two cannot import one value: frontend and backend are separate
+ * deployables with no shared package.
  */
 export const NEARBY_RADIUS_KM = 200;
 

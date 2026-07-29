@@ -24,11 +24,14 @@ export interface VendorQuery {
 
 /**
  * Radius (km) applied to a "near me" query that supplies coordinates but no
- * explicit `radius`. Deliberately independent of the frontend's
- * NEARBY_RADIUS_KM (currently 200): the site always sends `radius`, so this
- * only governs direct API callers, for whom a conservative default is safer.
+ * explicit `radius`.
+ *
+ * Must stay in sync with NEARBY_RADIUS_KM in the frontend's shared/config/site.ts
+ * so that a caller who omits `radius` sees the same results the site shows.
+ * The two cannot import one value: frontend and backend are separate
+ * deployables with no shared package.
  */
-export const DEFAULT_NEARBY_RADIUS_KM = 50;
+export const DEFAULT_NEARBY_RADIUS_KM = 200;
 
 /** Great-circle distance between two lat/lng points, in km (Haversine). */
 function distanceKm(aLat: number, aLng: number, bLat: number, bLng: number): number {
