@@ -160,6 +160,7 @@ No age gate, no DOB, no verifiable parental consent — yet weddings/events rout
 | L-5 | `{...dto}` spread into Prisma writes (mass-assignment) — currently **contained** by `whitelist:true` + admin-only routes, but `forbidNonWhitelisted` is `false`, so it's fragile. | `vendors.service.ts:56,135`, `cms.service.ts:26,49,65` |
 | L-6 | No global exception filter (Nest default does not leak stack traces, but Prisma errors surface as opaque 500s with no redacted logging). | `backend/src/main.ts` |
 | L-7 | Public `POST /bookings` is `@Public()`, so `@CurrentUser('id')` is always `undefined` — bookings are never linked to a logged-in customer. | `bookings.controller.ts:24-28` |
+| L-8 | **FIXED.** `GET /vendors/:idOrSlug` applied no status filter while `findAll` filtered `status: 'ACTIVE'`, so deactivating a vendor removed it from every listing but left its detail page — with packages, items and reviews — publicly readable and indexable by anyone holding the slug. Found by VDETAIL-E-07 on the suite's first real run. Now filtered to ACTIVE, with a role-gated `GET /vendors/admin/:idOrSlug` for the dashboard, which must still open a deactivated vendor to reactivate it. | `vendors.service.ts` `findOne`, `vendors.controller.ts` |
 
 ---
 

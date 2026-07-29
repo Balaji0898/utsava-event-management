@@ -58,6 +58,24 @@ export class VendorsController {
     });
   }
 
+  /**
+   * Admin lookup — the only way to read a vendor that is not ACTIVE.
+   *
+   * Declared BEFORE the public `:idOrSlug` route. They cannot actually collide
+   * (this path has two segments, that one has one), but keeping the more specific
+   * route first is the convention that makes it stay that way.
+   *
+   * The admin dashboard uses this rather than the public route because an admin
+   * must be able to open a deactivated vendor to reactivate it, while the public
+   * route must not disclose one.
+   */
+  @ApiBearerAuth()
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Get('admin/:idOrSlug')
+  findOneForAdmin(@Param('idOrSlug') idOrSlug: string) {
+    return this.service.findOne(idOrSlug, { includeInactive: true });
+  }
+
   @Public()
   @Get(':idOrSlug')
   findOne(@Param('idOrSlug') idOrSlug: string) {

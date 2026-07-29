@@ -160,6 +160,12 @@ export const protectedRoutes: ReadonlyArray<readonly [method: string, path: stri
   ['POST', '/vendors'],
   ['PATCH', '/vendors/does-not-exist'],
   ['DELETE', '/vendors/does-not-exist'],
+  /**
+   * The admin-only detail lookup. Its public twin filters to ACTIVE, so this is the
+   * only route that discloses a deactivated vendor — which is precisely why it has
+   * to be role-gated, and why the sweep must cover it.
+   */
+  ['GET', '/vendors/admin/does-not-exist'],
   // packages
   ['POST', '/packages'],
   ['PATCH', '/packages/does-not-exist'],

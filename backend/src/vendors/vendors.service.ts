@@ -147,9 +147,24 @@ export class VendorsService {
     return { data, total, page, limit, pages: Math.ceil(total / limit) };
   }
 
-  async findOne(idOrSlug: string) {
+  /**
+   * Look up one vendor by id or slug.
+   *
+   * Filters to ACTIVE unless `includeInactive` is set. Without that filter this
+   * leaked: `findAll` hides an INACTIVE vendor from every listing, but the detail
+   * lookup returned it to anyone holding the slug — so deactivating a vendor took
+   * it out of the catalogue while leaving its page, packages, items and reviews
+   * publicly readable and indexable. VDETAIL-E-07 asserts the 404.
+   *
+   * `includeInactive` is reachable only through the ADMIN-gated route, because an
+   * admin must be able to open a deactivated vendor in order to reactivate it.
+   */
+  async findOne(idOrSlug: string, { includeInactive = false }: { includeInactive?: boolean } = {}) {
     const vendor = await this.prisma.vendor.findFirst({
-      where: { OR: [{ id: idOrSlug }, { slug: idOrSlug }] },
+      where: {
+        OR: [{ id: idOrSlug }, { slug: idOrSlug }],
+        ...(includeInactive ? {} : { status: 'ACTIVE' }),
+      },
       include: {
         department: true,
         packages: { orderBy: { sortOrder: 'asc' } },

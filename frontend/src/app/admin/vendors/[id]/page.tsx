@@ -14,7 +14,13 @@ export default function EditVendorPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    api<any>(`/vendors/${id}`)
+    /**
+     * The ADMIN lookup, not the public one. `GET /vendors/:idOrSlug` now filters to
+     * ACTIVE — it used to disclose deactivated vendors to anyone with the slug — so
+     * the public route would 404 exactly the vendors an admin opens in order to
+     * reactivate them. This route is role-gated and returns them.
+     */
+    api<any>(`/vendors/admin/${id}`, { auth: true })
       .then((v) => {
         setVendor({
           id: v.id,
