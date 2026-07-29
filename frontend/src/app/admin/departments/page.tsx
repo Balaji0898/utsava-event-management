@@ -137,7 +137,7 @@ export default function AdminDepartments() {
         </div>
       </form>
 
-      {error && <p role="alert" className="mb-4 text-sm text-red-500">{error}</p>}
+      {error && <p role="alert" className="mb-4 text-sm text-red-600 dark:text-red-400">{error}</p>}
 
       {initialLoading ? (
         <TableSkeleton rows={5} cols={5} />
@@ -180,7 +180,7 @@ export default function AdminDepartments() {
                     {d._count?.vendors ?? 0}
                   </td>
                   <td className="px-5 py-3">
-                    <span className="rounded-full bg-emerald-500/10 px-2 py-1 text-xs text-emerald-500">
+                    <span className="rounded-full bg-emerald-500/10 px-2 py-1 text-xs text-emerald-700 dark:text-emerald-400">
                       {d.status}
                     </span>
                   </td>
@@ -196,7 +196,7 @@ export default function AdminDepartments() {
                       </button>
                       <button
                         onClick={() => remove(d.id)}
-                        className="text-red-500 hover:text-red-600"
+                        className="text-red-600 dark:text-red-400 hover:text-red-600"
                         aria-label={`Delete ${d.name}`}
                         data-testid={`dept-row-delete-${d.id}`}
                       >
@@ -211,7 +211,7 @@ export default function AdminDepartments() {
                   <td
                     colSpan={5}
                     data-testid="dept-empty"
-                    className="px-5 py-8 text-center text-[rgb(var(--foreground))]/50"
+                    className="px-5 py-8 text-center text-[rgb(var(--foreground))]/70"
                   >
                     No categories yet.
                   </td>

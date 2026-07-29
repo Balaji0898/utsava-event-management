@@ -152,7 +152,7 @@ export function VendorForm({ initial }: { initial?: Partial<VendorData> | null }
       </div>
 
       {error && (
-        <p role="alert" data-testid="vend-error" className="card border-red-500/40 p-3 text-sm text-red-500">
+        <p role="alert" data-testid="vend-error" className="card border-red-500/40 p-3 text-sm text-red-600 dark:text-red-400">
           {error}
         </p>
       )}

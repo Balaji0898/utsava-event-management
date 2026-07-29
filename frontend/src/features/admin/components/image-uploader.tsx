@@ -100,7 +100,7 @@ export function ImageUploader({
         }}
       />
       {error && (
-        <p role="alert" data-testid={`upload-error-${folder}`} className="mt-1 text-xs text-red-500">
+        <p role="alert" data-testid={`upload-error-${folder}`} className="mt-1 text-xs text-red-600 dark:text-red-400">
           {error}
         </p>
       )}

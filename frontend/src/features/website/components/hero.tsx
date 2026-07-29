@@ -120,7 +120,7 @@ export function Hero() {
                     router.push(`/vendors?lat=${lat}&lng=${lng}&radius=${NEARBY_RADIUS_KM}`)
                   }
                   placeholder={t('hero.searchPlaceholderPlace')}
-                  inputClassName="w-full bg-transparent text-sm font-semibold outline-none placeholder:text-[rgb(var(--foreground))]/40"
+                  inputClassName="w-full bg-transparent text-sm font-semibold outline-none placeholder:text-[rgb(var(--foreground))]/70"
                 />
               </Field>
               <Divider />
@@ -135,7 +135,7 @@ export function Hero() {
                   onBlur={(e) => {
                     if (!e.currentTarget.value) e.currentTarget.type = 'text';
                   }}
-                  className="w-full bg-transparent text-sm font-semibold outline-none placeholder:font-normal placeholder:text-[rgb(var(--foreground))]/40"
+                  className="w-full bg-transparent text-sm font-semibold outline-none placeholder:font-normal placeholder:text-[rgb(var(--foreground))]/70"
                 />
               </Field>
               <Divider />
@@ -143,7 +143,7 @@ export function Hero() {
                 <input
                   name="search"
                   placeholder={t('hero.searchPlaceholderEvent')}
-                  className="w-full bg-transparent text-sm font-semibold outline-none placeholder:text-[rgb(var(--foreground))]/40"
+                  className="w-full bg-transparent text-sm font-semibold outline-none placeholder:text-[rgb(var(--foreground))]/70"
                 />
               </Field>
               <button
@@ -177,7 +177,7 @@ function Field({
         {icon}
       </span>
       <div className="min-w-0 flex-1">
-        <div className="text-[11px] font-medium uppercase tracking-wide text-[rgb(var(--foreground))]/50">
+        <div className="text-[11px] font-medium uppercase tracking-wide text-[rgb(var(--foreground))]/70">
           {label}
         </div>
         {children}

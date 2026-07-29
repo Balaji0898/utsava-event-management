@@ -165,7 +165,7 @@ export default async function VendorsPage({
           </TiltCard>
         ))}
         {vendors.length === 0 && (
-          <p data-testid="vendors-empty" className="text-[rgb(var(--foreground))]/50">
+          <p data-testid="vendors-empty" className="text-[rgb(var(--foreground))]/70">
             <Tr>No vendors found.</Tr>
           </p>
         )}

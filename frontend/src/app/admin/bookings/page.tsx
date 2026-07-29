@@ -54,15 +54,15 @@ export default function AdminBookings() {
   const badge = (s: string) =>
     ({
       PENDING: 'bg-amber-500/10 text-amber-500',
-      CONFIRMED: 'bg-emerald-500/10 text-emerald-500',
-      CANCELLED: 'bg-red-500/10 text-red-500',
+      CONFIRMED: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
+      CANCELLED: 'bg-red-500/10 text-red-600 dark:text-red-400',
       COMPLETED: 'bg-brand-500/10 text-brand-500',
     })[s] ?? 'bg-gray-500/10';
 
   return (
     <div>
       <h2 className="mb-6 text-2xl font-bold">Bookings</h2>
-      {error && <p className="mb-4 text-sm text-red-500">{error}</p>}
+      {error && <p className="mb-4 text-sm text-red-600 dark:text-red-400">{error}</p>}
       {loading ? (
         <TableSkeleton rows={6} cols={6} />
       ) : (
@@ -93,7 +93,7 @@ export default function AdminBookings() {
               >
                 <td className="px-5 py-3">
                   <div className="font-medium">{b.customerName}</div>
-                  <div className="text-xs text-[rgb(var(--foreground))]/50">
+                  <div className="text-xs text-[rgb(var(--foreground))]/70">
                     {b.customerEmail}
                   </div>
                 </td>
@@ -137,7 +137,7 @@ export default function AdminBookings() {
                 <td
                   colSpan={6}
                   data-testid="booking-empty"
-                  className="px-5 py-8 text-center text-[rgb(var(--foreground))]/50"
+                  className="px-5 py-8 text-center text-[rgb(var(--foreground))]/70"
                 >
                   No bookings yet.
                 </td>

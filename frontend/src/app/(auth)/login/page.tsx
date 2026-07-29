@@ -66,7 +66,7 @@ export default function LoginPage() {
 
         <div className="mb-6 flex items-center gap-2">
           <Logo />
-          <span className="text-sm text-[rgb(var(--foreground))]/50">· Admin</span>
+          <span className="text-sm text-[rgb(var(--foreground))]/70">· Admin</span>
         </div>
         <h1 className="text-2xl font-bold">Welcome back</h1>
         <p className="mt-1 text-sm text-[rgb(var(--foreground))]/60">
@@ -93,7 +93,7 @@ export default function LoginPage() {
               {...register('email')}
             />
             {errors.email && (
-              <p id="login-email-error" className="mt-1 text-xs text-red-500">
+              <p id="login-email-error" className="mt-1 text-xs text-red-600 dark:text-red-400">
                 {errors.email.message}
               </p>
             )}
@@ -113,13 +113,13 @@ export default function LoginPage() {
               {...register('password')}
             />
             {errors.password && (
-              <p id="login-password-error" className="mt-1 text-xs text-red-500">
+              <p id="login-password-error" className="mt-1 text-xs text-red-600 dark:text-red-400">
                 {errors.password.message}
               </p>
             )}
           </div>
           {error && (
-            <p role="alert" data-testid="login-error" className="text-sm text-red-500">
+            <p role="alert" data-testid="login-error" className="text-sm text-red-600 dark:text-red-400">
               {error}
             </p>
           )}

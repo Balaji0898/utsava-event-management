@@ -38,7 +38,7 @@ export function Pagination({
           <button className={btn} onClick={() => onChange(1)}>
             1
           </button>
-          {start > 2 && <span className="px-1 text-[rgb(var(--foreground))]/40">…</span>}
+          {start > 2 && <span className="px-1 text-[rgb(var(--foreground))]/70">…</span>}
         </>
       )}
       {nums.map((n) => (
@@ -55,7 +55,7 @@ export function Pagination({
       ))}
       {end < pages && (
         <>
-          {end < pages - 1 && <span className="px-1 text-[rgb(var(--foreground))]/40">…</span>}
+          {end < pages - 1 && <span className="px-1 text-[rgb(var(--foreground))]/70">…</span>}
           <button className={btn} onClick={() => onChange(pages)}>
             {pages}
           </button>

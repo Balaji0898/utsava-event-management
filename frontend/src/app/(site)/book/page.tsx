@@ -124,7 +124,7 @@ function BookForm() {
             {...register('customerName')}
           />
           {errors.customerName && (
-            <p id="book-name-error" className="mt-1 text-xs text-red-500">
+            <p id="book-name-error" className="mt-1 text-xs text-red-600 dark:text-red-400">
               {errors.customerName.message}
             </p>
           )}
@@ -144,7 +144,7 @@ function BookForm() {
             {...register('customerEmail')}
           />
           {errors.customerEmail && (
-            <p id="book-email-error" className="mt-1 text-xs text-red-500">
+            <p id="book-email-error" className="mt-1 text-xs text-red-600 dark:text-red-400">
               {errors.customerEmail.message}
             </p>
           )}
@@ -175,7 +175,7 @@ function BookForm() {
             {...register('eventDate')}
           />
           {errors.eventDate && (
-            <p id="book-date-error" className="mt-1 text-xs text-red-500">
+            <p id="book-date-error" className="mt-1 text-xs text-red-600 dark:text-red-400">
               {errors.eventDate.message as string}
             </p>
           )}
@@ -206,7 +206,7 @@ function BookForm() {
             {...register('guestCount')}
           />
           {errors.guestCount && (
-            <p id="book-guests-error" className="mt-1 text-xs text-red-500">
+            <p id="book-guests-error" className="mt-1 text-xs text-red-600 dark:text-red-400">
               {errors.guestCount.message as string}
             </p>
           )}
@@ -225,7 +225,7 @@ function BookForm() {
             {...register('budget')}
           />
           {errors.budget && (
-            <p id="book-budget-error" className="mt-1 text-xs text-red-500">
+            <p id="book-budget-error" className="mt-1 text-xs text-red-600 dark:text-red-400">
               {errors.budget.message as string}
             </p>
           )}
@@ -269,14 +269,14 @@ function BookForm() {
           </span>
         </label>
         {errors.consent && (
-          <p id="book-consent-error" className="mt-1 text-xs text-red-500">
+          <p id="book-consent-error" className="mt-1 text-xs text-red-600 dark:text-red-400">
             {errors.consent.message as string}
           </p>
         )}
       </div>
 
       {error && (
-        <p role="alert" data-testid="book-error" className="text-sm text-red-500">
+        <p role="alert" data-testid="book-error" className="text-sm text-red-600 dark:text-red-400">
           {error}
         </p>
       )}

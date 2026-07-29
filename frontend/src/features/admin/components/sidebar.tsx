@@ -75,7 +75,7 @@ export function Sidebar() {
           router.push('/login');
         }}
         data-testid="admin-logout"
-        className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-500 hover:bg-red-500/10"
+        className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-500/10"
       >
         <LogOut size={18} aria-hidden /> Logout
       </button>

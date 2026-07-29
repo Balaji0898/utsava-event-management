@@ -157,7 +157,7 @@ export default async function VendorDetail({ params }: { params: { slug: string 
                 <p className="mt-2 text-sm">
                   <Tr>{r.comment}</Tr>
                 </p>
-                <p className="mt-2 text-xs text-[rgb(var(--foreground))]/50">
+                <p className="mt-2 text-xs text-[rgb(var(--foreground))]/70">
                   — {r.authorName ?? <Tr>Customer</Tr>}
                 </p>
               </div>

@@ -90,7 +90,7 @@ export function PackagesManager({ vendorId }: { vendorId: string }) {
           <button className="btn-primary w-full" data-testid="pkg-submit">
             <Plus size={16} aria-hidden className="mr-1" /> Add package
           </button>
-          {error && <p role="alert" className="text-xs text-red-500">{error}</p>}
+          {error && <p role="alert" className="text-xs text-red-600 dark:text-red-400">{error}</p>}
         </form>
 
         <div className="space-y-3" data-testid="pkg-list">
@@ -112,7 +112,7 @@ export function PackagesManager({ vendorId }: { vendorId: string }) {
                   onClick={() => remove(p.id)}
                   aria-label={`Delete package ${p.name}`}
                   data-testid={`pkg-row-delete-${p.id}`}
-                  className="text-red-500"
+                  className="text-red-600 dark:text-red-400"
                 >
                   <Trash2 size={16} aria-hidden />
                 </button>
@@ -127,7 +127,7 @@ export function PackagesManager({ vendorId }: { vendorId: string }) {
             </div>
           ))}
           {items.length === 0 && (
-            <p data-testid="pkg-empty" className="text-sm text-[rgb(var(--foreground))]/50">
+            <p data-testid="pkg-empty" className="text-sm text-[rgb(var(--foreground))]/70">
               No packages yet.
             </p>
           )}

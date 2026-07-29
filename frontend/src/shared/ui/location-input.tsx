@@ -156,7 +156,7 @@ export function LocationInput({
       </div>
 
       {status && (
-        <p role="status" className="mt-1 text-xs text-[rgb(var(--foreground))]/50">
+        <p role="status" className="mt-1 text-xs text-[rgb(var(--foreground))]/70">
           {status}
         </p>
       )}

@@ -72,7 +72,7 @@ export function Footer() {
           </div>
         </div>
       </div>
-      <div className="border-t py-6 text-center text-sm text-[rgb(var(--foreground))]/50">
+      <div className="border-t py-6 text-center text-sm text-[rgb(var(--foreground))]/70">
         © {new Date().getFullYear()} {site.name}. {t('footer.rights')}
       </div>
     </footer>

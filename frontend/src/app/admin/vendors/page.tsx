@@ -74,7 +74,7 @@ export default function AdminVendors() {
         </Link>
       </div>
 
-      {error && <p className="mb-4 text-sm text-red-500">{error}</p>}
+      {error && <p className="mb-4 text-sm text-red-600 dark:text-red-400">{error}</p>}
 
       {loading ? (
         <TableSkeleton rows={6} cols={7} />
@@ -119,7 +119,7 @@ export default function AdminVendors() {
                 <td className="px-5 py-3">{formatCurrency(Number(v.priceFrom))}</td>
                 <td className="px-5 py-3 text-[rgb(var(--foreground))]/60">{v.contactNumber ?? '—'}</td>
                 <td className="px-5 py-3">
-                  <span className="rounded-full bg-emerald-500/10 px-2 py-1 text-xs text-emerald-500">
+                  <span className="rounded-full bg-emerald-500/10 px-2 py-1 text-xs text-emerald-700 dark:text-emerald-400">
                     {v.status}
                   </span>
                 </td>
@@ -135,7 +135,7 @@ export default function AdminVendors() {
                     </Link>
                     <button
                       onClick={() => remove(v.id)}
-                      className="rounded-lg border border-red-500/30 p-2 text-red-500 hover:bg-red-500/10"
+                      className="rounded-lg border border-red-500/30 p-2 text-red-600 dark:text-red-400 hover:bg-red-500/10"
                       aria-label={`Delete ${v.name}`}
                       data-testid={`vend-row-delete-${v.id}`}
                     >
@@ -150,7 +150,7 @@ export default function AdminVendors() {
                 <td
                   colSpan={7}
                   data-testid="vend-empty"
-                  className="px-5 py-8 text-center text-[rgb(var(--foreground))]/50"
+                  className="px-5 py-8 text-center text-[rgb(var(--foreground))]/70"
                 >
                   No vendors yet. Click “Add vendor”.
                 </td>

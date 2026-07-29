@@ -35,7 +35,7 @@ export default async function TestimonialsPage() {
           ))}
         </div>
       ) : (
-        <p className="mt-10 text-[rgb(var(--foreground))]/50">
+        <p className="mt-10 text-[rgb(var(--foreground))]/70">
           <Tr>No reviews yet — be the first!</Tr>
         </p>
       )}

@@ -69,7 +69,7 @@ export default async function PackagesPage() {
           </TiltCard>
         ))}
         {packages.length === 0 && (
-          <p className="text-[rgb(var(--foreground))]/50">
+          <p className="text-[rgb(var(--foreground))]/70">
             <Tr>No packages yet.</Tr>
           </p>
         )}

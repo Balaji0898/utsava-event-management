@@ -88,7 +88,7 @@ export function GalleryUploader({
         onChange={(e) => e.target.files && uploadFiles(e.target.files)}
       />
       {error && (
-        <p role="alert" data-testid="upload-gallery-error" className="mt-1 text-xs text-red-500">
+        <p role="alert" data-testid="upload-gallery-error" className="mt-1 text-xs text-red-600 dark:text-red-400">
           {error}
         </p>
       )}

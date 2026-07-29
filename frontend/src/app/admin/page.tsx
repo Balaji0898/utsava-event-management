@@ -50,8 +50,8 @@ export default function AdminDashboard() {
   const statusCards = stats
     ? [
         { label: 'Pending', value: stats.pending, icon: Clock, color: 'text-amber-500' },
-        { label: 'Confirmed', value: stats.confirmed, icon: CheckCircle2, color: 'text-emerald-500' },
-        { label: 'Cancelled', value: stats.cancelled, icon: XCircle, color: 'text-red-500' },
+        { label: 'Confirmed', value: stats.confirmed, icon: CheckCircle2, color: 'text-emerald-700 dark:text-emerald-400' },
+        { label: 'Cancelled', value: stats.cancelled, icon: XCircle, color: 'text-red-600 dark:text-red-400' },
       ]
     : [];
 
@@ -65,7 +65,7 @@ export default function AdminDashboard() {
       </div>
 
       {error && (
-        <div role="alert" data-testid="dashboard-error" className="card mb-6 p-4 text-sm text-red-500">
+        <div role="alert" data-testid="dashboard-error" className="card mb-6 p-4 text-sm text-red-600 dark:text-red-400">
           Could not load stats: {error}. Make sure the API is running and you are logged in.
         </div>
       )}
@@ -132,7 +132,7 @@ export default function AdminDashboard() {
               />
             ))}
           </div>
-          <div className="mt-2 flex justify-between text-xs text-[rgb(var(--foreground))]/40">
+          <div className="mt-2 flex justify-between text-xs text-[rgb(var(--foreground))]/70">
             {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
               <span key={d}>{d}</span>
             ))}

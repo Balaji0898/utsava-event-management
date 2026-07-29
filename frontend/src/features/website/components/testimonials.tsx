@@ -41,7 +41,7 @@ export function TestimonialCard({ t: item }: { t: Testimonial }) {
         )}
         <div>
           <div className="text-sm font-semibold">{item.name}</div>
-          <div className="text-xs text-[rgb(var(--foreground))]/50">
+          <div className="text-xs text-[rgb(var(--foreground))]/70">
             <Tr>{item.role}</Tr>
           </div>
         </div>

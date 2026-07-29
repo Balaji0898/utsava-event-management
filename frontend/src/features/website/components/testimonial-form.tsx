@@ -51,7 +51,7 @@ export function TestimonialForm() {
         animate={{ opacity: 1, y: 0 }}
         className="card mx-auto mt-10 flex max-w-xl flex-col items-center gap-3 p-8 text-center"
       >
-        <CheckCircle2 className="text-emerald-500" size={40} />
+        <CheckCircle2 className="text-emerald-700 dark:text-emerald-400" size={40} />
         <h3 className="font-display text-2xl font-bold" data-testid="review-success">
           {t('reviewForm.thanksTitle')}
         </h3>
@@ -127,7 +127,7 @@ export function TestimonialForm() {
       />
 
       {error && (
-        <p role="alert" data-testid="review-error" className="text-sm text-red-500">
+        <p role="alert" data-testid="review-error" className="text-sm text-red-600 dark:text-red-400">
           {error}
         </p>
       )}

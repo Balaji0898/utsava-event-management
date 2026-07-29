@@ -152,7 +152,7 @@ export function NearbyEvents() {
       </div>
 
       {mode !== 'locating' && vendors.length === 0 && (
-        <p className="mt-4 text-[rgb(var(--foreground))]/50">
+        <p className="mt-4 text-[rgb(var(--foreground))]/70">
           <Tr>No events available yet.</Tr>
         </p>
       )}

@@ -54,7 +54,7 @@ export default function AdminCms() {
             data-testid={`cms-tab-${t}`}
             onClick={() => setTab(t)}
             className={`rounded-lg px-4 py-2 text-sm font-medium capitalize transition ${
-              tab === t ? 'bg-brand-600 text-white' : 'hover:bg-[rgb(var(--muted))]'
+              tab === t ? 'bg-brand-700 text-white' : 'hover:bg-[rgb(var(--muted))]'
             }`}
           >
             {t}
@@ -148,7 +148,7 @@ function TestimonialsPanel() {
         <button className="btn-primary w-full" data-testid="cms-testimonial-add">
           <Plus size={16} aria-hidden className="mr-1" /> Add
         </button>
-        {error && <p role="alert" className="text-xs text-red-500">{error}</p>}
+        {error && <p role="alert" className="text-xs text-red-600 dark:text-red-400">{error}</p>}
       </form>
 
       <div className="space-y-6 lg:col-span-2">
@@ -177,7 +177,7 @@ function TestimonialsPanel() {
                       onClick={() => approve(t.id)}
                       aria-label={`Approve review by ${t.name}`}
                       data-testid={`cms-testimonial-approve-${t.id}`}
-                      className="inline-flex items-center gap-1 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-600"
+                      className="inline-flex items-center gap-1 rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800"
                     >
                       <Check size={14} aria-hidden /> Approve
                     </button>
@@ -185,7 +185,7 @@ function TestimonialsPanel() {
                       onClick={() => remove(t.id)}
                       aria-label={`Reject review by ${t.name}`}
                       data-testid={`cms-testimonial-reject-${t.id}`}
-                      className="inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-[rgb(var(--muted))]"
+                      className="inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-[rgb(var(--muted))]"
                     >
                       <Trash2 size={14} aria-hidden /> Reject
                     </button>
@@ -207,14 +207,14 @@ function TestimonialsPanel() {
                   onClick={() => remove(t.id)}
                   aria-label={`Delete review by ${t.name}`}
                   data-testid={`cms-testimonial-delete-${t.id}`}
-                  className="text-red-500"
+                  className="text-red-600 dark:text-red-400"
                 >
                   <Trash2 size={16} aria-hidden />
                 </button>
               </div>
             ))}
             {approved.length === 0 && (
-              <p data-testid="cms-testimonial-empty" className="text-sm text-[rgb(var(--foreground))]/50">
+              <p data-testid="cms-testimonial-empty" className="text-sm text-[rgb(var(--foreground))]/70">
                 No published testimonials yet.
               </p>
             )}
@@ -235,7 +235,7 @@ function TestimonialBody({ t }: { t: Testimonial }) {
       <div className="flex-1">
         <div className="flex items-center gap-2 font-semibold">
           {t.name}
-          <span className="text-xs text-[rgb(var(--foreground))]/50">{t.role}</span>
+          <span className="text-xs text-[rgb(var(--foreground))]/70">{t.role}</span>
         </div>
         <div className="mt-0.5 flex">
           {Array.from({ length: t.rating }).map((_, s) => (
@@ -294,7 +294,7 @@ function FaqsPanel() {
         <button className="btn-primary w-full" data-testid="cms-faq-add">
           <Plus size={16} aria-hidden className="mr-1" /> Add
         </button>
-        {error && <p role="alert" className="text-xs text-red-500">{error}</p>}
+        {error && <p role="alert" className="text-xs text-red-600 dark:text-red-400">{error}</p>}
       </form>
 
       <div className="space-y-3 lg:col-span-2" data-testid="cms-faq-list">
@@ -308,13 +308,13 @@ function FaqsPanel() {
               onClick={() => remove(f.id)}
               aria-label={`Delete FAQ: ${f.question}`}
               data-testid={`cms-faq-delete-${f.id}`}
-              className="text-red-500"
+              className="text-red-600 dark:text-red-400"
             >
               <Trash2 size={16} aria-hidden />
             </button>
           </motion.div>
         ))}
-        {items.length === 0 && <p className="text-sm text-[rgb(var(--foreground))]/50">No FAQs yet.</p>}
+        {items.length === 0 && <p className="text-sm text-[rgb(var(--foreground))]/70">No FAQs yet.</p>}
       </div>
     </div>
   );
@@ -366,7 +366,7 @@ function StatsPanel() {
           <input aria-label={`Stat ${i + 1} suffix`} data-testid={`cms-stats-suffix-${i}`} className={`${field} col-span-2`} placeholder="Suffix" value={s.suffix ?? ''} onChange={(e) => update(i, { suffix: e.target.value })} />
           <button
             onClick={() => setItems((p) => p.filter((_, idx) => idx !== i))}
-            className="col-span-1 text-red-500"
+            className="col-span-1 text-red-600 dark:text-red-400"
             aria-label={`Remove stat ${i + 1}`}
             data-testid={`cms-stats-remove-${i}`}
           >
@@ -382,12 +382,12 @@ function StatsPanel() {
           <Save size={16} aria-hidden className="mr-1" /> Save
         </button>
         {saved && (
-          <span role="status" data-testid="cms-saved" className="text-sm text-emerald-500">
+          <span role="status" data-testid="cms-saved" className="text-sm text-emerald-700 dark:text-emerald-400">
             Saved ✓
           </span>
         )}
       </div>
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
     </div>
   );
 }
@@ -458,12 +458,12 @@ function ContactPanel() {
           <Save size={16} aria-hidden className="mr-1" /> Save
         </button>
         {saved && (
-          <span role="status" data-testid="cms-saved" className="text-sm text-emerald-500">
+          <span role="status" data-testid="cms-saved" className="text-sm text-emerald-700 dark:text-emerald-400">
             Saved ✓
           </span>
         )}
       </div>
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
     </form>
   );
 }
@@ -514,7 +514,7 @@ function LegalPanel() {
             data-testid={`cms-legal-toggle-${s}`}
             onClick={() => setSlug(s)}
             className={`rounded-lg px-4 py-2 text-sm font-medium capitalize transition ${
-              slug === s ? 'bg-brand-600 text-white' : 'hover:bg-[rgb(var(--muted))]'
+              slug === s ? 'bg-brand-700 text-white' : 'hover:bg-[rgb(var(--muted))]'
             }`}
           >
             {s === 'terms' ? 'Terms & Conditions' : 'Privacy Policy'}
@@ -533,12 +533,12 @@ function LegalPanel() {
           <Save size={16} aria-hidden className="mr-1" /> Save
         </button>
         {saved && (
-          <span role="status" data-testid="cms-saved" className="text-sm text-emerald-500">
+          <span role="status" data-testid="cms-saved" className="text-sm text-emerald-700 dark:text-emerald-400">
             Saved ✓
           </span>
         )}
       </div>
-      {error && <p role="alert" className="text-sm text-red-500">{error}</p>}
+      {error && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{error}</p>}
     </div>
   );
 }

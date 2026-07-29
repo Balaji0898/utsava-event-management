@@ -47,8 +47,8 @@ export default function EditVendorPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  if (loading) return <p className="text-sm text-[rgb(var(--foreground))]/50">Loading…</p>;
-  if (error) return <p className="text-sm text-red-500">{error}</p>;
+  if (loading) return <p className="text-sm text-[rgb(var(--foreground))]/70">Loading…</p>;
+  if (error) return <p className="text-sm text-red-600 dark:text-red-400">{error}</p>;
 
   return (
     <div className="space-y-6">
