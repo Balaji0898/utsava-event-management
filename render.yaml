@@ -36,6 +36,9 @@ services:
         sync: false
       - key: CORS_ORIGIN
         sync: false
+      # Same value as PROXY_SHARED_SECRET on Vercel, so rate limits are per visitor.
+      - key: PROXY_SHARED_SECRET
+        sync: false
       # Optional — set these to persist image uploads on Cloudinary
       # (local disk is ephemeral on Render/Railway and is wiped on redeploy).
       - key: CLOUDINARY_CLOUD_NAME

@@ -32,6 +32,7 @@ The repo already includes the configs:
 7. In the **utsava-api** service → **Environment**, set:
    - `APP_URL` = `https://utsava-api.onrender.com` (used for local-upload URLs)
    - `CORS_ORIGIN` = your Vercel URL (fill in after step B) — e.g. `https://utsava.vercel.app`
+   - `PROXY_SHARED_SECRET` = a long random string (`openssl rand -base64 48`); set the **same value** on Vercel
    - *(optional, for persistent uploads)* `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
    - Save → Render redeploys.
 
@@ -120,12 +121,14 @@ Then put a reverse proxy (Caddy/Nginx) in front for TLS. Frontend → :3000, API
 | `PORT` | injected by host | leave unset on Render/Railway |
 | `APP_URL` | `https://utsava-api.onrender.com` | for local-upload URLs |
 | `CORS_ORIGIN` | `https://utsava.vercel.app` | your frontend origin(s), comma-separated |
+| `PROXY_SHARED_SECRET` | long random string | same value as the frontend's; without it rate limits are shared by all visitors |
 | `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` | — | optional; enables persistent uploads |
 
 ### Frontend (`/frontend`)
 | Var | Example | Notes |
 |-----|---------|-------|
 | `NEXT_PUBLIC_API_URL` | `https://utsava-api.onrender.com` | must be set **before** build (it's inlined) |
+| `PROXY_SHARED_SECRET` | same value as the backend's | forwards each visitor's IP to the API for per-visitor rate limits |
 
 ---
 

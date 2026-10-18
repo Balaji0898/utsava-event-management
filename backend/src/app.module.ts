@@ -12,7 +12,7 @@ import { PackagesModule } from './packages/packages.module';
 import { BookingsModule } from './bookings/bookings.module';
 import { CmsModule } from './cms/cms.module';
 import { UploadsModule } from './uploads/uploads.module';
-import { PublicReadThrottlerGuard } from './common/public-read-throttler.guard';
+import { AppThrottlerGuard } from './common/app-throttler.guard';
 
 @Module({
   imports: [
@@ -31,6 +31,6 @@ import { PublicReadThrottlerGuard } from './common/public-read-throttler.guard';
     CmsModule,
     UploadsModule,
   ],
-  providers: [{ provide: APP_GUARD, useClass: PublicReadThrottlerGuard }],
+  providers: [{ provide: APP_GUARD, useClass: AppThrottlerGuard }],
 })
 export class AppModule {}
