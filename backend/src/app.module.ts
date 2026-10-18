@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { DepartmentsModule } from './departments/departments.module';
@@ -12,6 +12,7 @@ import { PackagesModule } from './packages/packages.module';
 import { BookingsModule } from './bookings/bookings.module';
 import { CmsModule } from './cms/cms.module';
 import { UploadsModule } from './uploads/uploads.module';
+import { PublicReadThrottlerGuard } from './common/public-read-throttler.guard';
 
 @Module({
   imports: [
@@ -30,6 +31,6 @@ import { UploadsModule } from './uploads/uploads.module';
     CmsModule,
     UploadsModule,
   ],
-  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
+  providers: [{ provide: APP_GUARD, useClass: PublicReadThrottlerGuard }],
 })
 export class AppModule {}
