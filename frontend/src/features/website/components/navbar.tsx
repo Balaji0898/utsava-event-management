@@ -23,7 +23,8 @@ export function Navbar() {
     { href: '/', label: t('nav.home') },
     { href: '/vendors', label: t('nav.vendors') },
     { href: '/packages', label: t('nav.packages') },
-    { href: '/#services', label: t('nav.services') },
+    // No "Services" tab: /#services is a section of the home page, so it only
+    // ever landed back on Home. The footer still links to it.
     { href: '/#contact', label: t('nav.contact') },
   ];
 

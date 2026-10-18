@@ -228,12 +228,15 @@ test.describe('Nav - the site shell', () => {
 
   test('NAV-E-01 anchor links never receive aria-current', async ({ homePage }) => {
     /**
-     * `isActive` returns false for any href containing '#', so Services and Contact Us are never
-     * marked active even while you are looking at those sections. Documented rather than
-     * asserted as a bug — it is a defensible choice, but it should not change silently.
+     * `isActive` returns false for any href containing '#', so Contact Us is never marked active
+     * even while you are looking at that section. Documented rather than asserted as a bug — it
+     * is a defensible choice, but it should not change silently.
+     *
+     * Services is deliberately not in the navbar: /#services is a home-page section, so the tab
+     * only ever landed back on Home. It stays reachable from the footer (NAV-P-03).
      */
     await homePage.open();
-    await expect(homePage.navbar.services).not.toHaveAttribute('aria-current', 'page');
+    await expect(homePage.navbar.services).toHaveCount(0);
     await expect(homePage.navbar.contact).not.toHaveAttribute('aria-current', 'page');
   });
 
