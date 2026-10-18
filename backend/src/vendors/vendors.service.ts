@@ -107,7 +107,10 @@ export class VendorsService {
             ? { priceFrom: 'desc' }
             : { createdAt: 'desc' };
 
-    const include = { department: true, packages: { orderBy: { sortOrder: 'asc' as const } } };
+    // Listings only render card fields; packages are loaded by findOne for the
+    // detail page. Including them here made every list response (the homepage
+    // pulls up to 50 featured vendors) carry every vendor's full package set.
+    const include = { department: true };
 
     // "Near me": when coordinates are provided, return only vendors that have
     // coordinates within `radius` km, sorted by distance (Haversine in JS —
