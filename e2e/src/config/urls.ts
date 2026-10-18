@@ -11,6 +11,7 @@ export const paths = {
   vendors: '/vendors',
   vendorDetail: (slug: string) => `/vendors/${slug}`,
   packages: '/packages',
+  services: '/services',
   book: '/book',
   bookFor: (vendorId: string, packageId?: string) =>
     `/book?vendorId=${encodeURIComponent(vendorId)}${packageId ? `&packageId=${encodeURIComponent(packageId)}` : ''}`,

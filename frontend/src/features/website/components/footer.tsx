@@ -31,7 +31,7 @@ export function Footer() {
         <FooterCol
           title={t('footer.company')}
           links={[
-            [t('nav.services'), '/#services'],
+            [t('nav.services'), '/services'],
             [<Tr key="t">Testimonials</Tr>, '/testimonials'],
             [<Tr key="f">FAQ</Tr>, '/#faq'],
             [<Tr key="p">Privacy</Tr>, '/privacy'],

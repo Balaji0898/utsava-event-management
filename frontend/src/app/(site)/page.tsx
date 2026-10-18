@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { serverApi, CACHE_TAGS } from '@/shared/lib/api';
 import { Hero } from '@/features/website/components/hero';
 import { Reveal, Stagger, StaggerItem } from '@/shared/motion/primitives';
-import { TiltCard } from '@/shared/motion/tilt-card';
 import { AnimatedCounter } from '@/shared/motion/counter';
 import { Testimonials } from '@/features/website/components/testimonials';
 import { TestimonialForm } from '@/features/website/components/testimonial-form';
@@ -12,8 +11,12 @@ import { ContactSection } from '@/features/website/components/contact-section';
 import { FunctionHallsSection, type Hall } from '@/features/website/components/function-halls-section';
 import { BestEventsSlider, type BestEventSlide } from '@/features/website/components/best-events-slider';
 import { NearbyEvents } from '@/features/website/components/nearby-events';
+import {
+  ServicesGrid,
+  serviceHref,
+  type Department,
+} from '@/features/website/components/services-grid';
 import { VendorGridSkeleton } from '@/shared/ui/skeletons';
-import { SafeImg } from '@/shared/ui/safe-img';
 import { T } from '@/shared/i18n';
 import { Tr } from '@/shared/i18n/tr';
 
@@ -21,16 +24,6 @@ import { Tr } from '@/shared/i18n/tr';
 // shows live data and never a stale/empty page baked while the backend was
 // cold. Data itself is still cached across requests via `serverApi`.
 export const dynamic = 'force-dynamic';
-
-type Department = {
-  id: string;
-  name: string;
-  slug: string;
-  icon?: string;
-  banner?: string;
-  description?: string;
-  _count?: { vendors: number };
-};
 
 // Deduped per-request: ServicesGrid, BestEventsSection and HallsSection all
 // need departments — React cache() coalesces them into a single fetch.
@@ -129,15 +122,25 @@ export default function HomePage() {
       <div className="mt-6 border-y bg-[rgb(var(--muted))]/60">
         <section id="services" className="container-page py-20">
           <Reveal>
-            <h2 className="text-3xl font-bold">
-              <T k="services.title" />
-            </h2>
-            <p className="mt-2 text-[rgb(var(--foreground))]/60">
-              <T k="services.subtitle" />
-            </p>
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <h2 className="text-3xl font-bold">
+                  <T k="services.title" />
+                </h2>
+                <p className="mt-2 text-[rgb(var(--foreground))]/60">
+                  <T k="services.subtitle" />
+                </p>
+              </div>
+              <Link
+                href="/services"
+                className="shrink-0 whitespace-nowrap text-sm font-medium text-accent"
+              >
+                <T k="featured.viewAll" /> →
+              </Link>
+            </div>
           </Reveal>
           <Suspense fallback={<div className="mt-10"><VendorGridSkeleton count={6} /></div>}>
-            <ServicesGrid />
+            <ServicesSection />
           </Suspense>
         </section>
       </div>
@@ -212,45 +215,9 @@ async function StatsSection() {
   return <StatsGrid items={items} />;
 }
 
-async function ServicesGrid() {
-  const departments =
-    (await getDepartments()) ?? [];
-
-  return (
-    <Stagger className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-      {departments.map((d) => (
-        <StaggerItem key={d.id}>
-          <TiltCard className="card h-full overflow-hidden">
-            <Link href={`/vendors?departmentId=${d.id}`} className="flex h-full flex-col">
-              <div className="relative h-40 overflow-hidden">
-                <SafeImg
-                  src={d.banner}
-                  alt={d.name}
-                  width={400}
-                  className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                <div className="absolute bottom-3 left-4 flex items-center gap-2 text-2xl">
-                  <span>{d.icon}</span>
-                  <span className="text-lg font-bold text-white">
-                    <Tr>{d.name}</Tr>
-                  </span>
-                </div>
-              </div>
-              <div className="flex flex-1 flex-col p-6">
-                <p className="text-sm text-[rgb(var(--foreground))]/60">
-                  {d.description ? <Tr>{d.description}</Tr> : <T k="services.explore" />}
-                </p>
-                <div className="mt-auto pt-4 text-sm font-medium text-accent">
-                  {d._count?.vendors ?? 0} <T k="services.vendorsSuffix" /> →
-                </div>
-              </div>
-            </Link>
-          </TiltCard>
-        </StaggerItem>
-      ))}
-    </Stagger>
-  );
+async function ServicesSection() {
+  const departments = (await getDepartments()) ?? [];
+  return <ServicesGrid departments={departments} />;
 }
 
 async function BestEventsSection() {
@@ -280,7 +247,7 @@ async function BestEventsSection() {
       title: v?.name ?? d.name,
       description: v?.description ?? d.description,
       priceFrom: v ? Number(v.priceFrom) : undefined,
-      href: v ? `/vendors/${v.slug}` : `/vendors?departmentId=${d.id}`,
+      href: v ? `/vendors/${v.slug}` : serviceHref(d.id),
       isBest: Boolean(v),
     };
   });

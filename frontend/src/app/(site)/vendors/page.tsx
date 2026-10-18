@@ -3,10 +3,12 @@ import { serverApi, CACHE_TAGS } from '@/shared/lib/api';
 import { Reveal } from '@/shared/motion/primitives';
 import { TiltCard } from '@/shared/motion/tilt-card';
 import { BackButton } from '@/shared/ui/back-button';
+import { SafeImg } from '@/shared/ui/safe-img';
 import { formatCurrency } from '@/shared/lib/utils';
 import { Tr } from '@/shared/i18n/tr';
 import { NEARBY_RADIUS_KM } from '@/shared/config/site';
-import { Star, ShieldCheck, MapPin } from 'lucide-react';
+import type { Department } from '@/features/website/components/services-grid';
+import { Star, ShieldCheck, MapPin, X } from 'lucide-react';
 
 export const metadata = { title: 'Vendors' };
 
@@ -75,6 +77,14 @@ export default async function VendorsPage({
       { tags: [CACHE_TAGS.vendors] },
     );
   }
+  // Name the service being browsed. /departments is the same cached list the
+  // home page and /services use, so this is normally a cache hit.
+  const department = searchParams.departmentId
+    ? ((await serverApi<Department[]>('/departments', { tags: [CACHE_TAGS.departments] })) ?? []).find(
+        (d) => d.id === searchParams.departmentId,
+      )
+    : undefined;
+
   const vendors = res?.data ?? [];
   const pages = res?.pages ?? 1;
   const locationNotice = nearMe
@@ -103,14 +113,38 @@ export default async function VendorsPage({
   return (
     <div className="container-page py-14">
       <div className="mb-6">
-        <BackButton fallback="/" label="Back to home" />
+        {department ? (
+          <BackButton fallback="/services" label="Back to services" />
+        ) : (
+          <BackButton fallback="/" label="Back to home" />
+        )}
       </div>
       <Reveal>
         <h1 className="text-4xl font-bold">
           <Tr>Vendors</Tr>
         </h1>
+        {department && (
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <span
+              data-testid="vendors-service-filter"
+              className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 py-1.5 pl-4 pr-2 text-sm font-medium text-accent"
+            >
+              {department.icon} <Tr>{department.name}</Tr>
+              <Link
+                href="/vendors"
+                aria-label="Clear service filter"
+                className="rounded-full p-1 hover:bg-accent/20"
+              >
+                <X size={14} aria-hidden />
+              </Link>
+            </span>
+          </div>
+        )}
         <p data-testid="vendors-count" className="mt-2 text-[rgb(var(--foreground))]/60">
-          <Tr>{`${res?.total ?? 0} vendors available. Filter by department from the home page.`}</Tr>
+          <Tr>{`${res?.total ?? 0} vendors available.`}</Tr>{' '}
+          <Link href="/services" className="font-medium text-accent">
+            {department ? <Tr>See all services</Tr> : <Tr>Browse by service</Tr>} →
+          </Link>
         </p>
         {locationNotice && (
           <p
@@ -132,10 +166,10 @@ export default async function VendorsPage({
               className="flex h-full flex-col"
             >
               <div className="relative h-40 overflow-hidden">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={v.coverImage ?? ''}
+                <SafeImg
+                  src={v.coverImage}
                   alt={v.name}
+                  width={400}
                   className="h-full w-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />

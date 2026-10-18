@@ -204,8 +204,8 @@ export const messages = {
      * link text and the page heading legitimately disagree.
      */
     title: 'Vendors',
-    countCopy: (total: number) => `${total} vendors available. Filter by department from the home page.`,
-    countSuffix: 'vendors available. Filter by department from the home page.',
+    countCopy: (total: number) => `${total} vendors available.`,
+    countSuffix: 'vendors available.',
     empty: 'No vendors found.',
     from: 'From',
     backToHome: 'Back to home',

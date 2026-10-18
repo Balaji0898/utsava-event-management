@@ -10,10 +10,11 @@ import { PaginationComponent } from '@components/pagination.component';
  *
  * Things that shape every spec here:
  *
- *  - **There is no filter UI on this page.** Filters arrive purely as query params,
- *    produced elsewhere: the home hero search form and the department cards. The
- *    page's own copy even says "Filter by department from the home page." So a
- *    filtering spec navigates by URL, it does not click controls that do not exist.
+ *  - **There is no filter form on this page.** Filters arrive purely as query params,
+ *    produced elsewhere: the home hero search form and the service cards (home
+ *    section and /services). A `departmentId` filter shows the service as a chip
+ *    (`vendors-service-filter`) whose x clears it, and the count line links to
+ *    /services. A filtering spec navigates by URL or via those cards.
  *
  *  - Params consumed: `departmentId`, `search`, `city`, `page`, `lat`+`lng`.
  *    `PAGE_SIZE` is 12. Note the home hero also submits a `date` field which this

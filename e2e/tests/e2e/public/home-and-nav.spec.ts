@@ -218,6 +218,7 @@ test.describe('Nav - the site shell', () => {
     /** `nav.vendors` is "Our Work", while the destination page's h1 says "Vendors". */
     await expect(homePage.navbar.ourWork).toBeVisible();
     await expect(homePage.navbar.packages).toBeVisible();
+    await expect(homePage.navbar.services).toBeVisible();
     await expect(homePage.navbar.bookNow).toBeVisible();
   });
 
@@ -231,13 +232,28 @@ test.describe('Nav - the site shell', () => {
      * `isActive` returns false for any href containing '#', so Contact Us is never marked active
      * even while you are looking at that section. Documented rather than asserted as a bug — it
      * is a defensible choice, but it should not change silently.
-     *
-     * Services is deliberately not in the navbar: /#services is a home-page section, so the tab
-     * only ever landed back on Home. It stays reachable from the footer (NAV-P-03).
      */
     await homePage.open();
-    await expect(homePage.navbar.services).toHaveCount(0);
     await expect(homePage.navbar.contact).not.toHaveAttribute('aria-current', 'page');
+  });
+
+  test('NAV-P-06 Services is its own page, marked active, and its cards filter the listing @smoke', async ({
+    homePage,
+    page,
+  }) => {
+    /**
+     * Services used to be the `/#services` anchor, so from any other page it landed on Home with
+     * Home still highlighted. It is now the `/services` route.
+     */
+    await homePage.open();
+    await homePage.navbar.services.click();
+    await expect(page).toHaveURL(/\/services$/);
+    await homePage.navbar.expectActive(messages.nav.services);
+
+    const dept = seededDepartments[0];
+    await page.getByTestId(`service-card-${dept.slug}`).click();
+    await expect(page).toHaveURL(/\/vendors\?departmentId=/);
+    await expect(page.getByTestId('vendors-service-filter')).toContainText(dept.name);
   });
 
   test('NAV-P-03 an anchor link scrolls to its section and settles @smoke', async ({ homePage }) => {
@@ -248,9 +264,9 @@ test.describe('Nav - the site shell', () => {
      * until it stops moving rather than sleeping a fixed amount.
      */
     await homePage.open();
-    await homePage.followAnchorLink(messages.nav.services, 'services');
+    await homePage.followAnchorLink(messages.nav.contact, 'contact');
 
-    await expect(homePage.servicesSection).toBeInViewport({ ratio: 0.1 });
+    await expect(homePage.contactSection).toBeInViewport({ ratio: 0.1 });
   });
 
   test('NAV-P-04 a direct URL with a hash scrolls to the section', async ({ homePage }) => {
@@ -266,6 +282,7 @@ test.describe('Nav - the site shell', () => {
       paths.home,
       paths.vendors,
       paths.packages,
+      paths.services,
       paths.book,
       paths.testimonials,
       paths.privacy,
