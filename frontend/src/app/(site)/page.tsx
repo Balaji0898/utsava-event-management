@@ -13,6 +13,7 @@ import { FunctionHallsSection, type Hall } from '@/features/website/components/f
 import { BestEventsSlider, type BestEventSlide } from '@/features/website/components/best-events-slider';
 import { NearbyEvents } from '@/features/website/components/nearby-events';
 import { VendorGridSkeleton } from '@/shared/ui/skeletons';
+import { SafeImg } from '@/shared/ui/safe-img';
 import { T } from '@/shared/i18n';
 import { Tr } from '@/shared/i18n/tr';
 
@@ -222,10 +223,10 @@ async function ServicesGrid() {
           <TiltCard className="card h-full overflow-hidden">
             <Link href={`/vendors?departmentId=${d.id}`} className="flex h-full flex-col">
               <div className="relative h-40 overflow-hidden">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={d.banner ?? ''}
+                <SafeImg
+                  src={d.banner}
                   alt={d.name}
+                  width={400}
                   className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />

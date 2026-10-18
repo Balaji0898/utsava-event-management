@@ -7,6 +7,7 @@ import { MapPin, Users, ArrowUpRight, Star } from 'lucide-react';
 import { TiltCard } from '@/shared/motion/tilt-card';
 import { formatCurrency } from '@/shared/lib/utils';
 import { Tr } from '@/shared/i18n/tr';
+import { SafeImg } from '@/shared/ui/safe-img';
 
 const Hero3D = dynamic(() => import('@/features/website/components/hero-3d'), {
   ssr: false,
@@ -85,8 +86,7 @@ export function FunctionHallsSection({
               <TiltCard key={h.id} className="card h-full overflow-hidden">
                 <Link href={`/vendors/${h.slug}`}>
                   <div className="relative h-40 overflow-hidden">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={h.coverImage ?? ''} alt={h.name} className="h-full w-full object-cover" />
+                    <SafeImg src={h.coverImage} alt={h.name} width={400} className="h-full w-full object-cover" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                     <span className="absolute bottom-3 left-4 flex items-center gap-1 text-xs font-medium text-white">
                       <Star size={12} className="fill-yellow-400 text-yellow-400" /> {h.rating}

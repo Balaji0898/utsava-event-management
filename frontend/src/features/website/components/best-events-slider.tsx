@@ -14,6 +14,7 @@ import {
 import { Award, ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatCurrency } from '@/shared/lib/utils';
 import { Tr } from '@/shared/i18n/tr';
+import { SafeImg } from '@/shared/ui/safe-img';
 
 export type BestEventSlide = {
   category: string;
@@ -118,8 +119,12 @@ export function BestEventsSlider({ slides }: { slides: BestEventSlide[] }) {
               transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
               className="absolute inset-0"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={s.image ?? ''} alt={s.title} className="h-full w-full object-cover" />
+              <SafeImg
+                src={s.image}
+                alt={s.title}
+                loading="eager"
+                className="h-full w-full object-cover"
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/10" />
               <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent" />
             </motion.div>

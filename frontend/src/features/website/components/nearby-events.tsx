@@ -14,6 +14,7 @@ import { formatCurrency } from '@/shared/lib/utils';
 import { useI18n } from '@/shared/i18n';
 import { Tr } from '@/shared/i18n/tr';
 import { NEARBY_RADIUS_KM } from '@/shared/config/site';
+import { SafeImg } from '@/shared/ui/safe-img';
 
 const LIMIT = 8;
 
@@ -201,8 +202,7 @@ export function NearbyEvents() {
           : vendors.map((v) => (
               <Link key={v.id} href={`/vendors/${v.slug}`} className="card h-full overflow-hidden">
                 <div className="relative h-36 overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={v.coverImage ?? ''} alt={v.name} className="h-full w-full object-cover" />
+                  <SafeImg src={v.coverImage} alt={v.name} width={320} className="h-full w-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                 </div>
                 <div className="flex flex-1 flex-col p-4">
