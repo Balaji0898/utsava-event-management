@@ -34,12 +34,108 @@ export const CACHE_TAGS = {
 type FetchOptions = RequestInit & {
   auth?: boolean;
   /**
-   * Optional deadline in ms. Without one, a cold/hanging backend leaves the
-   * returned promise pending indefinitely — and any loading UI awaiting it
-   * spinning forever. Ignored when the caller passes its own `signal`.
+   * Optional deadline in ms, covering the headers and the body. Without one, a
+   * cold/hanging backend leaves the returned promise pending indefinitely — and
+   * any loading UI awaiting it spinning forever. Combines with a caller `signal`:
+   * whichever fires first aborts the request.
    */
   timeoutMs?: number;
 };
+
+/** A failed API call. `status` is absent when no usable HTTP response arrived. */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status?: number,
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+/** Response validators, so a malformed payload counts as a failure. */
+export const isList = (data: unknown): boolean => Array.isArray(data);
+export const isPage = (data: unknown): boolean => Array.isArray((data as any)?.data);
+
+const isDev = process.env.NODE_ENV !== 'production';
+
+/**
+ * Query strings are dropped: they can hold a visitor's coordinates or search
+ * text, and `section` already says which call this was.
+ */
+function logTarget(section: string | undefined, path: string) {
+  return `[api] section=${section ?? 'unknown'} path=${path.split('?')[0]}`;
+}
+
+function failureReason(err: unknown): string {
+  if ((err as Error)?.name === 'AbortError') return 'timed out or aborted';
+  const cause = (err as { cause?: { code?: string } })?.cause?.code;
+  const message = err instanceof Error ? err.message : String(err);
+  return cause ? `${message} (${cause})` : message;
+}
+
+/** Timeouts, network errors, malformed payloads, 5xx and 429 can all heal. */
+function isRetryable(err: unknown): boolean {
+  const status = err instanceof ApiError ? err.status : undefined;
+  return status === undefined || status >= 500 || status === 429;
+}
+
+function isDynamicBailout(err: unknown): boolean {
+  return (err as { digest?: string })?.digest === 'DYNAMIC_SERVER_USAGE';
+}
+
+/** Waits `ms`, ending early if `signal` aborts. */
+function sleep(ms: number, signal?: AbortSignal | null): Promise<void> {
+  return new Promise((resolve) => {
+    if (signal?.aborted) return resolve();
+    const done = () => {
+      clearTimeout(timer);
+      signal?.removeEventListener('abort', done);
+      resolve();
+    };
+    const timer = setTimeout(done, ms);
+    signal?.addEventListener('abort', done, { once: true });
+  });
+}
+
+type RetryOptions = {
+  retries: number;
+  /** Wait before retry N; the last entry repeats. */
+  backoffMs: number[];
+  section?: string;
+  path: string;
+  signal?: AbortSignal | null;
+};
+
+/**
+ * Runs `attempt` until it succeeds, spacing retries out so that a backend which
+ * is restarting gets time to come back. Without the wait, every retry lands
+ * inside the same few milliseconds of the same outage.
+ */
+async function withRetry<T>(
+  attempt: () => Promise<T>,
+  { retries, backoffMs, section, path, signal }: RetryOptions,
+): Promise<T> {
+  const target = logTarget(section, path);
+  for (let tries = 0; ; tries++) {
+    if (isDev) console.debug(`${target} request attempt=${tries + 1}`);
+    try {
+      const result = await attempt();
+      if (isDev) console.debug(`${target} ok attempt=${tries + 1}`);
+      return result;
+    } catch (err) {
+      // Neither is a failure: the caller walked away, or Next is using a throw to
+      // mark this page as dynamic during the build.
+      if (signal?.aborted || isDynamicBailout(err)) throw err;
+      console.warn(
+        `${target} failed attempt=${tries + 1}/${retries + 1} ` +
+          `status=${(err as ApiError).status ?? 'none'} reason=${failureReason(err)}`,
+      );
+      if (tries >= retries || !isRetryable(err)) throw err;
+      await sleep(backoffMs[Math.min(tries, backoffMs.length - 1)], signal);
+    }
+  }
+}
 
 function getToken() {
   if (typeof window === 'undefined') return null;
@@ -130,34 +226,42 @@ function bustCacheAfterMutation(path: string, method?: string, token?: string | 
   });
 }
 
-export async function api<T = any>(
+export async function api<T = any>(path: string, options: FetchOptions = {}): Promise<T> {
+  const { timeoutMs, ...rest } = options;
+  if (!timeoutMs) return request<T>(path, rest);
+
+  // See FetchOptions.timeoutMs. The timer stays armed until the body has been
+  // read, because a stalled body hangs a caller just as a stalled response does.
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  const timer = setTimeout(abort, timeoutMs);
+  if (rest.signal?.aborted) abort();
+  rest.signal?.addEventListener('abort', abort, { once: true });
+  try {
+    return await request<T>(path, { ...rest, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+    rest.signal?.removeEventListener('abort', abort);
+  }
+}
+
+async function request<T>(
   path: string,
-  options: FetchOptions = {},
+  options: Omit<FetchOptions, 'timeoutMs'>,
   _retried = false,
 ): Promise<T> {
-  const { auth: useAuth, headers, timeoutMs, ...rest } = options;
+  const { auth: useAuth, headers, ...rest } = options;
   const token = useAuth ? getToken() : null;
 
-  // Abort after `timeoutMs` when asked to (see FetchOptions.timeoutMs). A
-  // caller-supplied signal always wins.
-  const controller = timeoutMs && !rest.signal ? new AbortController() : null;
-  const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
-
-  let res: Response;
-  try {
-    res = await fetch(apiUrl(path), {
-      ...rest,
-      signal: controller?.signal ?? rest.signal,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...headers,
-      },
-      cache: 'no-store',
-    });
-  } finally {
-    if (timer) clearTimeout(timer);
-  }
+  const res = await fetch(apiUrl(path), {
+    ...rest,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...headers,
+    },
+    cache: 'no-store',
+  });
 
   // Access token expired/blocked → try one refresh + retry, then give up.
   // Exclude only the endpoints that must never trigger a refresh (would recurse
@@ -168,7 +272,7 @@ export async function api<T = any>(
   if (isAuthError && useAuth && !_retried && !noRefresh && typeof window !== 'undefined') {
     const refreshed = await refreshOnce();
     if (refreshed) {
-      return api<T>(path, options, true); // retry once with the new access token
+      return request<T>(path, options, true); // retry once with the new access token
     }
     forceLogout();
     throw new Error('Your session has expired. Please sign in again.');
@@ -176,7 +280,7 @@ export async function api<T = any>(
 
   if (!res.ok) {
     const body = await parseJsonSafe(res);
-    throw new Error(body?.message ?? `Request failed (${res.status})`);
+    throw new ApiError(body?.message ?? `Request failed (${res.status})`, res.status);
   }
 
   // A successful admin create/update/delete means the underlying public data
@@ -200,6 +304,39 @@ async function parseJsonSafe(res: Response): Promise<any> {
   } catch {
     return null;
   }
+}
+
+type ReadOptions = {
+  /** Section name for logs. */
+  section?: string;
+  /** Rejects a malformed payload, which is then retried like any failure. */
+  validate?: (data: unknown) => boolean;
+  /** Per-attempt deadline in ms. */
+  timeoutMs?: number;
+  retries?: number;
+  signal?: AbortSignal;
+};
+
+/**
+ * Backoff for browser reads. With the 12s default deadline, four attempts span
+ * about 65s, which outlasts the 30-60s cold start of a sleeping backend
+ * (DEPLOYMENT.md, "Free-tier note").
+ */
+const CLIENT_BACKOFF_MS = [2000, 5000, 10000];
+
+/** Public GET from the browser, retried through transient failures. */
+export function apiRead<T>(
+  path: string,
+  { section, validate, timeoutMs = 12000, retries = 3, signal }: ReadOptions = {},
+): Promise<T> {
+  return withRetry(
+    async () => {
+      const data = await api<T>(path, { timeoutMs, signal });
+      if (validate && !validate(data)) throw new ApiError('Unexpected response shape');
+      return data;
+    },
+    { retries, backoffMs: CLIENT_BACKOFF_MS, section, path, signal },
+  );
 }
 
 // Server-side helper (no auth token; used by RSC for public data).
@@ -236,60 +373,87 @@ type ServerApiOptions = {
    * cached so subsequent loads are fast.
    */
   retries?: number;
+  /** Section name for logs. */
+  section?: string;
+  /**
+   * Rejects a malformed payload. Runs inside the cached function, so a bad
+   * response is treated as a failure and never stored.
+   */
+  validate?: (data: unknown) => boolean;
 };
 
-/** Fetch JSON with a bounded timeout + retries. Throws on any failure. */
+/** Outcome of a server read; `failed` tells "no data" apart from "couldn't load". */
+export type ServerResult<T> = { data: T | null; failed: boolean };
+
+const SERVER_BACKOFF_MS = [500, 1500];
+
+/**
+ * Parse a server-side response. An empty body is a genuine null (see
+ * parseJsonSafe), but anything else that isn't JSON came from something other
+ * than the API, such as a platform error page, and must not reach the cache.
+ */
+function parseJsonStrict(text: string): unknown {
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new ApiError('Response was not JSON');
+  }
+}
+
+/** Fetch JSON once with a bounded timeout. Throws on any failure. */
 async function fetchJsonOrThrow<T>(
   url: string,
   timeoutMs: number,
-  retries: number,
+  validate?: (data: unknown) => boolean,
 ): Promise<T> {
-  let lastErr: unknown;
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    try {
-      // no-store here: caching is handled one layer up by unstable_cache, so we
-      // don't want the fetch Data Cache to also cache (including failures).
-      const res = await fetch(url, { signal: controller.signal, cache: 'no-store' });
-      if (!res.ok) {
-        // 5xx can be a transient cold start — retry; 4xx won't get better.
-        if (res.status >= 500 && attempt < retries) {
-          lastErr = new Error(`HTTP ${res.status}`);
-          continue;
-        }
-        throw new Error(`Request failed (${res.status})`);
-      }
-      return (await parseJsonSafe(res)) as T;
-    } catch (err) {
-      lastErr = err;
-      if (attempt < retries) continue;
-      throw err;
-    } finally {
-      clearTimeout(timer);
-    }
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    // no-store here: caching is handled one layer up by unstable_cache, so we
+    // don't want the fetch Data Cache to also cache (including failures).
+    const res = await fetch(url, { signal: controller.signal, cache: 'no-store' });
+    if (!res.ok) throw new ApiError(`Request failed (${res.status})`, res.status);
+    const data = parseJsonStrict(await res.text());
+    if (validate && !validate(data)) throw new ApiError('Unexpected response shape');
+    return data as T;
+  } finally {
+    clearTimeout(timer);
   }
-  throw lastErr ?? new Error('Request failed');
 }
 
-export async function serverApi<T = any>(
+/** Like `serverApi`, but reports whether the read failed. */
+export async function serverRead<T = any>(
   path: string,
-  { revalidate = 300, tags = [], timeoutMs = 10000, retries = 2 }: ServerApiOptions = {},
-): Promise<T | null> {
+  { revalidate = 300, tags = [], timeoutMs = 10000, retries = 2, section, validate }: ServerApiOptions = {},
+): Promise<ServerResult<T>> {
   // Server-side: call the backend directly (never through the browser proxy).
   const url = apiUrl(path);
   // Cache the successful result across requests, keyed by path, under `tags`.
   const getCached = unstable_cache(
-    () => fetchJsonOrThrow<T>(url, timeoutMs, retries),
+    () =>
+      withRetry(() => fetchJsonOrThrow<T>(url, timeoutMs, validate), {
+        retries,
+        backoffMs: SERVER_BACKOFF_MS,
+        section,
+        path,
+      }),
     ['serverApi', path],
     { revalidate, tags },
   );
   try {
-    return await getCached();
+    return { data: await getCached(), failed: false };
   } catch {
     // Miss/failure is not cached (the fn threw) — render empty, retry next time.
-    return null;
+    return { data: null, failed: true };
   }
+}
+
+export async function serverApi<T = any>(
+  path: string,
+  options: ServerApiOptions = {},
+): Promise<T | null> {
+  return (await serverRead<T>(path, options)).data;
 }
 
 export const auth = {

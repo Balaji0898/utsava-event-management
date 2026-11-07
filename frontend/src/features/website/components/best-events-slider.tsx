@@ -85,7 +85,7 @@ export function BestEventsSlider({ slides }: { slides: BestEventSlide[] }) {
   };
 
   if (!count) return null;
-  const s = slides[index];
+  const s = slides[index % count]; // A refresh can leave fewer slides than before.
 
   return (
     <div ref={wrapRef} className="[perspective:1200px]">
