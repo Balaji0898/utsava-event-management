@@ -51,6 +51,18 @@ export class AllExceptionsFilter implements ExceptionFilter {
         return { status: HttpStatus.NOT_FOUND, message: 'Record not found.' };
       case 'P2003':
         return { status: HttpStatus.BAD_REQUEST, message: 'Invalid reference.' };
+      // Connection trouble, not a bad request: unreachable, connect or operation
+      // timeout, connection closed, pool exhausted. Clients retry 5xx but not 4xx,
+      // so reporting these as 400 would make a passing blip look permanent.
+      case 'P1001':
+      case 'P1002':
+      case 'P1008':
+      case 'P1017':
+      case 'P2024':
+        return {
+          status: HttpStatus.SERVICE_UNAVAILABLE,
+          message: 'The service is temporarily unavailable.',
+        };
       default:
         return { status: HttpStatus.BAD_REQUEST, message: 'Request could not be processed.' };
     }

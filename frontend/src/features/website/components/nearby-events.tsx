@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { MapPin, Star, ShieldCheck, Loader2, RotateCw } from 'lucide-react';
-import { api } from '@/shared/lib/api';
+import { MapPin, Star, ShieldCheck, Loader2 } from 'lucide-react';
+import { apiRead, isPage } from '@/shared/lib/api';
 import {
   geolocationPermission,
   getCurrentPosition,
@@ -15,6 +15,7 @@ import { useI18n } from '@/shared/i18n';
 import { Tr } from '@/shared/i18n/tr';
 import { NEARBY_RADIUS_KM } from '@/shared/config/site';
 import { SafeImg } from '@/shared/ui/safe-img';
+import { SectionEmpty, SectionError } from '@/features/website/components/section-retry';
 
 const LIMIT = 8;
 
@@ -24,9 +25,6 @@ const LIMIT = 8;
  * in the background — allowing late still upgrades the list to nearby events.
  */
 const GEO_WAIT_MS = 6000;
-
-/** Deadline for each events request, so a cold backend can't hang the section. */
-const FETCH_TIMEOUT_MS = 12000;
 
 /** Resolves with the promise's value, or null once `ms` elapses. */
 function withDeadline<T>(promise: Promise<T>, ms: number): Promise<T | null> {
@@ -81,13 +79,21 @@ export function NearbyEvents() {
 
   useEffect(() => {
     let cancelled = false;
+    // Separate from `nearbyRequest` so a nearby result can drop just this one.
+    const allRequest = new AbortController();
+    const nearbyRequest = new AbortController();
 
-    async function fetchList(query: string): Promise<{ items: Vendor[]; ok: boolean }> {
+    async function fetchList(
+      query: string,
+      signal: AbortSignal,
+    ): Promise<{ items: Vendor[]; ok: boolean }> {
       try {
-        const res = await api<{ data: Vendor[]; total: number }>(query, {
-          timeoutMs: FETCH_TIMEOUT_MS,
+        const res = await apiRead<{ data: Vendor[]; total: number }>(query, {
+          section: 'explore-events',
+          validate: isPage,
+          signal,
         });
-        return { items: res?.data ?? [], ok: true };
+        return { items: res.data, ok: true };
       } catch {
         return { items: [], ok: false }; // aborted / offline / backend error
       }
@@ -95,7 +101,7 @@ export function NearbyEvents() {
 
     // Started right away, in parallel with the location request: whatever the
     // user does with the permission prompt, there is always something to render.
-    const allEvents = fetchList(`/vendors?limit=${LIMIT}`);
+    const allEvents = fetchList(`/vendors?limit=${LIMIT}`, allRequest.signal);
 
     async function showAll() {
       const all = await allEvents;
@@ -110,8 +116,10 @@ export function NearbyEvents() {
       if (!pos.ok) return false;
       const near = await fetchList(
         `/vendors?lat=${pos.lat}&lng=${pos.lng}&radius=${NEARBY_RADIUS_KM}&limit=${LIMIT}`,
+        nearbyRequest.signal,
       );
       if (cancelled || near.items.length === 0) return false;
+      allRequest.abort(); // Superseded; stop any retries still running.
       setVendors(near.items);
       setFailed(false);
       setMode('nearby');
@@ -159,8 +167,17 @@ export function NearbyEvents() {
     run();
     return () => {
       cancelled = true;
+      allRequest.abort();
+      nearbyRequest.abort();
     };
   }, [attempt]);
+
+  // Coming back online is a better retry signal than anything we could time.
+  useEffect(() => {
+    if (!failed) return;
+    window.addEventListener('online', retry);
+    return () => window.removeEventListener('online', retry);
+  }, [failed, retry]);
 
   const heading =
     mode === 'nearby'
@@ -228,23 +245,13 @@ export function NearbyEvents() {
             ))}
       </div>
 
-      {mode !== 'locating' && vendors.length === 0 && (
-        <div className="mt-4 flex flex-wrap items-center gap-3 text-[rgb(var(--foreground))]/70">
-          <p>
-            <Tr>{failed ? "Couldn't load events just now." : 'No events available yet.'}</Tr>
-          </p>
-          {failed && (
-            <button
-              type="button"
-              onClick={retry}
-              className="btn-ghost inline-flex items-center gap-1.5 px-4 py-2 text-sm"
-            >
-              <RotateCw size={14} aria-hidden />
-              <Tr>Try again</Tr>
-            </button>
-          )}
-        </div>
-      )}
+      {mode !== 'locating' &&
+        vendors.length === 0 &&
+        (failed ? (
+          <SectionError message="Couldn't load events just now." onRetry={retry} />
+        ) : (
+          <SectionEmpty message="No events available yet." />
+        ))}
     </section>
   );
 }

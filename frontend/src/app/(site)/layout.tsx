@@ -10,6 +10,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
   // Short budget so a cold backend can't keep the site shell blank on first
   // paint — falls back to default contact and warms from cache on later loads.
   const contact = await serverApi<Partial<SiteContact>>('/cms/contact', {
+    section: 'contact',
     tags: [CACHE_TAGS.cms],
     timeoutMs: 2500,
     retries: 0,
